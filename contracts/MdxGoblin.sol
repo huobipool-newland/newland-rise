@@ -23,8 +23,8 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     event Liquidate(uint256 indexed id, address lpTokenAddress, uint256 lpAmount, address debtToken, uint256 liqAmount);
 
     /// @notice Immutable variables
-    uint public chefPid;
     IStakingRewards public staking;
+    uint public stakingPid;
     IMdexFactory public factory;
     IMdexRouter public router;
     IMdexPair public lpToken;
@@ -42,6 +42,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     constructor(
         address _operator,
         IStakingRewards _staking,
+        uint _stakingPid,
         IMdexRouter _router,
         address _token0,
         address _token1,
@@ -50,6 +51,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         operator = _operator;
         wht = _router.WHT();
         staking = _staking;
+        stakingPid = _stakingPid;
         router = _router;
         factory = IMdexFactory(_router.factory());
 
@@ -204,7 +206,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         uint256 lpBalance = lpToken.balanceOf(address(this));
         if (lpBalance > 0) {
             // take lpToken to the pool2.
-            staking.deposit(chefPid, lpBalance, user);
+            staking.deposit(stakingPid, lpBalance, user);
             totalLPAmount = totalLPAmount.add(lpBalance);
             posLPAmount[id] = posLPAmount[id].add(lpBalance);
             emit AddPosition(id, lpBalance);
@@ -217,7 +219,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         if (lpAmount > 0) {
             posLPAmount[id] = 0;
             totalLPAmount = totalLPAmount.sub(lpAmount);
-            staking.withdraw(chefPid, lpAmount, user);
+            staking.withdraw(stakingPid, lpAmount, user);
             emit RemovePosition(id, lpAmount);
         }
     }
