@@ -11,6 +11,7 @@ import "./interface/IMdexFactory.sol";
 import "./interface/IMdexRouter.sol";
 import "./interface/IMdexPair.sol";
 import "./interface/IStakingRewards.sol";
+import "./Treasury.sol";
 
 contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     /// @notice Libraries
@@ -38,6 +39,11 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     mapping(address => bool) public okStrategies;
     uint256 public totalLPAmount;
     Strategy public liqStrategy;
+
+    Treasury public treasury;
+
+    address public HPT = 0xE499Ef4616993730CEd0f31FA2703B92B50bB536;
+    address public MDX = 0x25D2e80cB6B86881Fd7e07dd263Fb79f4AbE033c;
 
     constructor(
         address _operator,
@@ -67,6 +73,10 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
 
         // 100% trust in the staking pool
         lpToken.approve(address(_staking), uint256(-1));
+
+        treasury = new Treasury();
+        HPT.safeApprove(address(treasury), uint256(-1));
+        MDX.safeApprove(address(treasury), uint256(-1));
     }
 
     /// @dev Require that the caller must be the operator (the bank).
@@ -206,7 +216,15 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         uint256 lpBalance = lpToken.balanceOf(address(this));
         if (lpBalance > 0) {
             // take lpToken to the pool2.
+
+            uint hptBefore = HPT.myBalance();
+            uint mdxBefore = MDX.myBalance();
             staking.deposit(stakingPid, lpBalance, user);
+            uint hptafter = HPT.myBalance();
+            uint mdxafter = MDX.myBalance();
+            treasury.deposit(user, HPT, hptafter - hptBefore);
+            treasury.deposit(user, MDX, mdxafter - mdxBefore);
+
             totalLPAmount = totalLPAmount.add(lpBalance);
             posLPAmount[id] = posLPAmount[id].add(lpBalance);
             emit AddPosition(id, lpBalance);
@@ -219,7 +237,15 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         if (lpAmount > 0) {
             posLPAmount[id] = 0;
             totalLPAmount = totalLPAmount.sub(lpAmount);
+
+            uint hptBefore = HPT.myBalance();
+            uint mdxBefore = MDX.myBalance();
             staking.withdraw(stakingPid, lpAmount, user);
+            uint hptafter = HPT.myBalance();
+            uint mdxafter = MDX.myBalance();
+            treasury.deposit(user, HPT, hptafter - hptBefore);
+            treasury.deposit(user, MDX, mdxafter - mdxBefore);
+
             emit RemovePosition(id, lpAmount);
         }
     }

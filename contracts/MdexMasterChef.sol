@@ -103,8 +103,8 @@ contract MdexMasterChef is Ownable,IStakingRewards {
     }
 
 
-    modifier checkOp(address user, address sender) {
-        require(opInfoMap[sender].enable || user == sender);
+    modifier checkOp() {
+        require(opInfoMap[msg.sender].enable);
         _;
     }
 
@@ -297,7 +297,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
     }
 
     // Deposit LP tokens to MasterChef for HPT allocation.
-    function deposit(uint256 _pid, uint256 _amount, address _user) public override checkOp(_user, msg.sender) {
+    function deposit(uint256 _pid, uint256 _amount, address _user) public override checkOp {
         PoolInfo storage pool = poolInfo[_pid];
         updatePool(_pid);
 
@@ -318,8 +318,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
             safeMdxTransfer(msg.sender, mdxPending);
         }
 
-        address from = opInfoMap[msg.sender].enable ? msg.sender:_user;
-        pool.lpToken.safeTransferFrom(address(from), address(this), _amount);
+        pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
         pool.lpToken.approve(address(mdxChef), _amount);
         mdxChef.deposit(pool.mdxChefPid, _amount);
 
@@ -331,7 +330,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
     }
 
     // Withdraw LP tokens from MasterChef.
-    function withdraw(uint256 _pid, uint256 _amount, address _user) public override checkOp(_user, msg.sender) {
+    function withdraw(uint256 _pid, uint256 _amount, address _user) public override checkOp {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         require(user.amount >= _amount, "withdraw: not good");
@@ -359,20 +358,18 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         user.mdxRewardDebt = user.amount.mul(pool.accMdxPerShare).div(1e12);
 
         mdxChef.withdraw(pool.mdxChefPid, _amount);
-        address to = opInfoMap[msg.sender].enable ? msg.sender:_user;
-        pool.lpToken.safeTransfer(address(to), _amount);
+        pool.lpToken.safeTransfer(address(msg.sender), _amount);
 
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid, address _user) public checkOp(_user, msg.sender) {
+    function emergencyWithdraw(uint256 _pid, address _user) public checkOp {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
 
         mdxChef.withdraw(pool.mdxChefPid, user.amount);
-        address to = opInfoMap[msg.sender].enable ? msg.sender:_user;
-        pool.lpToken.safeTransfer(to, user.amount);
+        pool.lpToken.safeTransfer(msg.sender, user.amount);
 
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
         pool.lpBalance = pool.lpBalance.sub(user.amount);
