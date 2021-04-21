@@ -23,6 +23,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     event Liquidate(uint256 indexed id, address lpTokenAddress, uint256 lpAmount, address debtToken, uint256 liqAmount);
 
     /// @notice Immutable variables
+    uint public chefPid;
     IStakingRewards public staking;
     IMdexFactory public factory;
     IMdexRouter public router;
@@ -203,7 +204,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         uint256 lpBalance = lpToken.balanceOf(address(this));
         if (lpBalance > 0) {
             // take lpToken to the pool2.
-            staking.stake(lpBalance, user);
+            staking.deposit(chefPid, lpBalance, user);
             totalLPAmount = totalLPAmount.add(lpBalance);
             posLPAmount[id] = posLPAmount[id].add(lpBalance);
             emit AddPosition(id, lpBalance);
@@ -216,7 +217,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         if (lpAmount > 0) {
             posLPAmount[id] = 0;
             totalLPAmount = totalLPAmount.sub(lpAmount);
-            staking.withdraw(lpAmount, user);
+            staking.withdraw(chefPid, lpAmount, user);
             emit RemovePosition(id, lpAmount);
         }
     }
