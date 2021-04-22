@@ -7,4 +7,5 @@ interface IStakingRewards {
 
     function withdraw(uint256 _pid, uint256 amount, address user) external;
 
+    function claim(uint _pid, address _user, address to) external;
 }

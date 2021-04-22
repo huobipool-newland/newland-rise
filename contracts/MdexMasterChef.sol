@@ -14,6 +14,7 @@ import "./interface/IWHT.sol";
 import "./interface/IMdexChef.sol";
 import "./library/TransferHelper.sol";
 import "./interface/IStakingRewards.sol";
+import "./Treasury.sol";
 
 // MasterChef is the master of Hpt. He can make Hpt and he is a fair guy.
 //
@@ -40,6 +41,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         uint256 mdxChefPid;
         uint256 lpBalance;
         uint256 accMdxPerShare;
+        Treasury treasury;
     }
 
     struct OpInfo {
@@ -101,7 +103,6 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         mdx = _mdx;
         treasuryAddress = _treasuryAddress;
     }
-
 
     modifier checkOp() {
         require(opInfoMap[msg.sender].enable);
@@ -165,6 +166,10 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         uint256 lastRewardBlock =
         block.number > startBlock ? block.number : startBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        Treasury treasury= new Treasury();
+        mdx.approve(address(treasury), uint256(-1));
+        hpt.approve(address(treasury), uint256(-1));
+
         poolInfo.push(
             PoolInfo({
             lpToken: _lpToken,
@@ -173,7 +178,8 @@ contract MdexMasterChef is Ownable,IStakingRewards {
             accHptPerShare: 0,
             mdxChefPid: _mdxChefPid,
             lpBalance: 0,
-            accMdxPerShare: 0
+            accMdxPerShare: 0,
+            treasury: treasury
             })
         );
     }
@@ -222,7 +228,8 @@ contract MdexMasterChef is Ownable,IStakingRewards {
                 hptReward.mul(1e12).div(lpSupply)
             );
         }
-        return user.amount.mul(accHptPerShare).div(1e12).sub(user.rewardDebt);
+        return user.amount.mul(accHptPerShare).div(1e12).sub(user.rewardDebt) +
+        pool.treasury.queryUserTokenAmt(_user, address(hpt));
     }
 
     // View function to see pending HPTs on frontend.
@@ -242,7 +249,8 @@ contract MdexMasterChef is Ownable,IStakingRewards {
                 mdxReward.mul(1e12).div(lpSupply)
             );
         }
-        return user.amount.mul(accMdxPerShare).div(1e12).sub(user.mdxRewardDebt);
+        return user.amount.mul(accMdxPerShare).div(1e12).sub(user.mdxRewardDebt) +
+        pool.treasury.queryUserTokenAmt(_user, address(hpt));
     }
 
     // Update reward vairables for all pools. Be careful of gas spending!
@@ -308,17 +316,17 @@ contract MdexMasterChef is Ownable,IStakingRewards {
             user.amount.mul(pool.accHptPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-            safeHptTransfer(msg.sender, hptPending);
+            safeHptTransfer(pool, _user, hptPending);
 
             // reward mdx
             uint256 mdxPending =
             user.amount.mul(pool.accMdxPerShare).div(1e12).sub(
                 user.mdxRewardDebt
             );
-            safeMdxTransfer(msg.sender, mdxPending);
+            safeMdxTransfer(pool, _user, mdxPending);
         }
 
-        pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+        pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
         pool.lpToken.approve(address(mdxChef), _amount);
         mdxChef.deposit(pool.mdxChefPid, _amount);
 
@@ -342,14 +350,14 @@ contract MdexMasterChef is Ownable,IStakingRewards {
             user.amount.mul(pool.accHptPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-            safeHptTransfer(msg.sender, pending);
+            safeHptTransfer(pool, _user, pending);
 
             // reward mdx
             uint256 mdxPending =
             user.amount.mul(pool.accMdxPerShare).div(1e12).sub(
                 user.mdxRewardDebt
             );
-            safeMdxTransfer(msg.sender, mdxPending);
+            safeMdxTransfer(pool, _user, mdxPending);
         }
 
         pool.lpBalance = pool.lpBalance.sub(_amount);
@@ -358,7 +366,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         user.mdxRewardDebt = user.amount.mul(pool.accMdxPerShare).div(1e12);
 
         mdxChef.withdraw(pool.mdxChefPid, _amount);
-        pool.lpToken.safeTransfer(address(msg.sender), _amount);
+        pool.lpToken.safeTransfer(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _pid, _amount);
     }
@@ -378,24 +386,33 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         user.mdxRewardDebt = 0;
     }
 
-    function safeHptTransfer(address _to, uint256 _amount) internal {
+    function claim(uint _pid, address _user, address to) public override checkOp {
+        PoolInfo storage pool = poolInfo[_pid];
+
+        withdraw(_pid, 0, _user);
+
+        pool.treasury.withdraw(_user, address(hpt), pool.treasury.queryUserTokenAmt(_user, address(hpt)), to);
+        pool.treasury.withdraw(_user, address(mdx), pool.treasury.queryUserTokenAmt(_user, address(mdx)), to);
+    }
+
+    function safeHptTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {
         hptRewardBalance = hptRewardBalance.sub(_amount);
         uint256 hptBal = hpt.balanceOf(address(this));
         if (_amount > hptBal) {
-            hpt.transfer(_to, hptBal);
-        } else {
-            hpt.transfer(_to, _amount);
+            _amount = hptBal;
         }
+
+        pool.treasury.deposit(_to, address(hpt), _amount);
     }
 
-    function safeMdxTransfer(address _to, uint256 _amount) internal {
+    function safeMdxTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {
         mdxRewardBalance = mdxRewardBalance.sub(_amount);
         uint256 mdxBal = mdx.balanceOf(address(this));
         if (_amount > mdxBal) {
-            mdx.transfer(_to, mdxBal);
-        } else {
-            mdx.transfer(_to, _amount);
+            _amount = mdxBal;
         }
+
+        pool.treasury.deposit(_to, address(mdx), _amount);
     }
 
 fallback() external {}

@@ -11,4 +11,6 @@ interface Goblin {
 
     /// @dev Liquidate the given position to token need. Send all ETH back to Bank.
     function liquidate(uint256 id, address user, address borrowToken) external;
+
+    function claim(address user, address to) external;
 }

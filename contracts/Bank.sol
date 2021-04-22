@@ -239,6 +239,13 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         emit Liquidate(posId, msg.sender, prize, left);
     }
 
+    function claim(uint256 posId) external payable onlyEOA nonReentrant {
+        Position storage pos = positions[posId];
+        require(msg.sender == pos.owner, "only owner");
+        Production storage production = productions[pos.productionId];
+
+    }
+
     function _addDebt(Position storage pos, Production storage production, uint256 debtVal) internal {
         if (debtVal == 0) {
             return;
