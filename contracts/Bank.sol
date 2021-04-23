@@ -17,6 +17,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
     event OpPosition(uint256 indexed id, uint256 debt, uint back);
     event Liquidate(uint256 indexed id, address indexed killer, uint256 prize, uint256 left);
+    event Claim(address user, address to);
 
     struct TokenBank {
         address tokenAddr;
@@ -244,6 +245,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         require(msg.sender == pos.owner, "only owner");
         Production storage production = productions[pos.productionId];
 
+        Goblin(production.goblin).claim(pos.owner, pos.owner);
+        emit Claim(pos.owner, pos.owner);
     }
 
     function _addDebt(Position storage pos, Production storage production, uint256 debtVal) internal {
