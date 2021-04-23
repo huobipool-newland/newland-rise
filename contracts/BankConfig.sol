@@ -3,34 +3,23 @@
 pragma solidity ^0.6.0;
 
 import "./interface/IBankConfig.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interface/InterestModel.sol";
 
-contract BankConfig is IBankConfig {
-    uint interestRateFact;
-    uint reserveBps;
-    uint liquidateBps;
+contract BankConfig is IBankConfig, Ownable {
+    uint256 public override getReserveBps;
+    uint256 public override getLiquidateBps;
+    InterestModel public interestModel;
 
-    function setInterestRateFact(uint _interestRateFact) public {
-        interestRateFact = _interestRateFact;
+    constructor() public {}
+
+    function setParams(uint256 _getReserveBps, uint256 _getLiquidateBps, InterestModel _interestModel) public onlyOwner {
+        getReserveBps = _getReserveBps;
+        getLiquidateBps = _getLiquidateBps;
+        interestModel = _interestModel;
     }
 
-    function setReserveBps(uint _reserveBps) public {
-        reserveBps = _reserveBps;
+    function getInterestRate(uint256 debt, uint256 floating) external override view returns (uint256) {
+        return interestModel.getInterestRate(debt, floating);
     }
-
-    function setLiquidateBps(uint _liquidateBps) public {
-        liquidateBps = _liquidateBps;
-    }
-
-    function getInterestRate(uint256 debt, uint256 floating) public override view returns (uint256) {
-        return interestRateFact;
-    }
-
-    function getReserveBps() public override view returns (uint256) {
-        return reserveBps;
-    }
-
-    function getLiquidateBps() public override view returns (uint256) {
-        return liquidateBps;
-    }
-
 }
