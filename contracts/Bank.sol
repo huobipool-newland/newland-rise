@@ -53,6 +53,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     IBankConfig config;
 
     mapping(address => TokenBank) public banks;
+    address[] public bankTokens;
 
     mapping(uint256 => Production) public productions;
     uint256 public currentPid = 1;
@@ -68,6 +69,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     constructor() public {}
 
     /// read
+    function getBankTokens() public view returns(address[] memory) {
+        return bankTokens;
+    }
+
     function positionInfo(uint256 posId) public view returns (uint256, uint256, uint256, address) {
         Position storage pos = positions[posId];
         Production storage prod = productions[pos.productionId];
@@ -300,6 +305,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         bank.totalDebtShare = 0;
         bank.totalReserve = 0;
         bank.lastInterestTime = now;
+
+        bankTokens.push(token);
     }
 
     function updateToken(address token, bool canDeposit, bool canWithdraw) external onlyOwner {
