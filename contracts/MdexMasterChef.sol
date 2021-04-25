@@ -229,7 +229,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
             );
         }
         return user.amount.mul(accHptPerShare).div(1e12).sub(user.rewardDebt) +
-        pool.treasury.queryUserTokenAmt(_user, address(hpt));
+        pool.treasury.userTokenAmt(_user, address(hpt));
     }
 
     // View function to see pending HPTs on frontend.
@@ -250,7 +250,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
             );
         }
         return user.amount.mul(accMdxPerShare).div(1e12).sub(user.mdxRewardDebt) +
-        pool.treasury.queryUserTokenAmt(_user, address(hpt));
+        pool.treasury.userTokenAmt(_user, address(hpt));
     }
 
     // Update reward vairables for all pools. Be careful of gas spending!
@@ -391,8 +391,8 @@ contract MdexMasterChef is Ownable,IStakingRewards {
 
         withdraw(_pid, 0, _user);
 
-        pool.treasury.withdraw(_user, address(hpt), pool.treasury.queryUserTokenAmt(_user, address(hpt)), to);
-        pool.treasury.withdraw(_user, address(mdx), pool.treasury.queryUserTokenAmt(_user, address(mdx)), to);
+        pool.treasury.withdraw(_user, address(hpt), pool.treasury.userTokenAmt(_user, address(hpt)), to);
+        pool.treasury.withdraw(_user, address(mdx), pool.treasury.userTokenAmt(_user, address(mdx)), to);
     }
 
     function safeHptTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {

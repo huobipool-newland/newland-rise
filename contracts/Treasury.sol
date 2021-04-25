@@ -7,16 +7,8 @@ import "./library/SafeToken.sol";
 contract Treasury is Ownable {
     using SafeToken for address;
 
-    mapping(address => mapping(address => uint)) userTokenAmt;
-    mapping(address => uint) tokenTotalAmt;
-
-    function queryUserTokenAmt(address _user, address token) public view returns(uint) {
-        return userTokenAmt[_user][token];
-    }
-
-    function queryTokenTotalAmt(address token) public view returns(uint) {
-        return tokenTotalAmt[token];
-    }
+    mapping(address => mapping(address => uint)) public userTokenAmt;
+    mapping(address => uint) public tokenTotalAmt;
 
     function deposit(address user, address token, uint amt) public onlyOwner returns(uint) {
         token.safeTransferFrom(msg.sender, address(this), amt);

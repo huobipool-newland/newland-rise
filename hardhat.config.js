@@ -8,9 +8,9 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 1,
-      // forking: {
-      //   url: "https://eth-mainnet.alchemyapi.io/v2/s_wCrA62gAffVHfvW_66rQr9Nq_diDCp"
-      // },
+      forking: {
+        url: "https://mainnet.infura.io/v3/4d3b666a5b064d16b611f2ab50cf5289"
+      },
       accounts: {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
       },
