@@ -42,7 +42,6 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     constructor(
         address _operator,
         IStakingRewards _staking,
-        uint _stakingPid,
         IMdexRouter _router,
         address _token0,
         address _token1,
@@ -51,7 +50,6 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         operator = _operator;
         wht = _router.WHT();
         staking = _staking;
-        stakingPid = _stakingPid;
         router = _router;
         factory = IMdexFactory(_router.factory());
 
@@ -59,6 +57,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         _token1 = _token1 == address(0) ? wht : _token1;
 
         lpToken = IMdexPair(factory.getPair(_token0, _token1));
+        stakingPid = _staking.pidMap(address(lpToken));
         token0 = lpToken.token0();
         token1 = lpToken.token1();
 

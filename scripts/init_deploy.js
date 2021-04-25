@@ -1,9 +1,9 @@
 require("./_runUtil");
 
-let mdxRouter = '0xED7d5F38C79115ca12fe6C0041abb22F0A06C300'
-let ETH = '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd'
+let MDX_ROUTER = '0xED7d5F38C79115ca12fe6C0041abb22F0A06C300'
 let USDT = '0xa71edc38d189767582c38a3145b5873052c3e47a'
-let address0 = '0x0000000000000000000000000000000000000000'
+let HUSD = '0x0298c2b32eaE4da002a15f36fdf7615BEa3DA047'
+let ADDRESS_0 = '0x0000000000000000000000000000000000000000'
 
 async function main() {
     let model = await $deploy('TripleSlopeModel')
@@ -20,22 +20,31 @@ async function main() {
         '0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c',//mdx
         '0x2f1178bd9596ab649014441dDB83c2f240B5527C'//treasuryAddress
     )
+    // ------ 10 0xdff86B408284dff30A7CAD7688fEdB465734501C 193
+    // HUSD 0x0298c2b32eaE4da002a15f36fdf7615BEa3DA047
+    // USDT 0xa71EdC38d189767582C38A3145b5873052c3e47a
+    await chef.add(
+        1,//allocPoint,
+        '0xdff86B408284dff30A7CAD7688fEdB465734501C',//lpToken,
+        10//mdxChefPid
+    );
+
     let liqStrategy = await $deploy('LiqStrategy');
+
     let goblin = await $deploy('MdxGoblin',
         bank.address,//operator,
         chef.address,//staking,
-        0,//stakingPid,
-        mdxRouter,//router,
-        ETH,//token0,
-        USDT,//token1,
-        liqStrategy//liqStrategy
+        MDX_ROUTER,//router,
+        USDT,//token0,
+        HUSD,//token1,
+        liqStrategy.address//liqStrategy
     )
     let mdxAddStrategy = await $deploy('MdxStrategyAddTwoSidesOptimal',
-        mdxRouter,
+        MDX_ROUTER,
         goblin.address
     )
     let mdxWithdrawStrategy =await $deploy('MdxStrategyWithdrawMinimizeTrading',
-        mdxRouter,
+        MDX_ROUTER,
     )
     await goblin.setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
     await config.setParams(1, 1, model.address);

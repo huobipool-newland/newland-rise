@@ -9,7 +9,7 @@ module.exports = {
     hardhat: {
       chainId: 1,
       forking: {
-        url: "https://mainnet.infura.io/v3/4d3b666a5b064d16b611f2ab50cf5289"
+        url: "https://http-mainnet-node.huobichain.com"
       },
       accounts: {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"

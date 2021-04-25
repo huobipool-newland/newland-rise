@@ -5,7 +5,7 @@ async function deploy(name, ...args) {
         `------Deploying ${name} with the account:`,
         deployer.address
     );
-    console.log("Account balance:", (await deployer.getBalance()).toString());
+    // console.log("Account balance:", (await deployer.getBalance()).toString());
 
     const Contract = await ethers.getContractFactory(name);
     const contract = await Contract.deploy(...args);

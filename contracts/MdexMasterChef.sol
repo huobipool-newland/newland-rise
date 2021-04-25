@@ -73,6 +73,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
     IERC20 public mdx;
     uint256 one = 1e18;
     address public treasuryAddress;
+    mapping(address => uint) public override pidMap;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -170,6 +171,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         mdx.approve(address(treasury), uint256(-1));
         hpt.approve(address(treasury), uint256(-1));
 
+        pidMap[address(_lpToken)] = poolInfo.length;
         poolInfo.push(
             PoolInfo({
             lpToken: _lpToken,
