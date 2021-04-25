@@ -9,5 +9,5 @@ interface IStakingRewards {
 
     function claim(uint _pid, address _user, address to) external;
 
-    function pidMap(address _lpToken) external returns(uint);
+    function getPid(address lpToken) external returns(uint);
 }

@@ -73,7 +73,8 @@ contract MdexMasterChef is Ownable,IStakingRewards {
     IERC20 public mdx;
     uint256 one = 1e18;
     address public treasuryAddress;
-    mapping(address => uint) public override pidMap;
+
+    mapping(address => uint) poolLenMap;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -108,6 +109,13 @@ contract MdexMasterChef is Ownable,IStakingRewards {
     modifier checkOp() {
         require(opInfoMap[msg.sender].enable);
         _;
+    }
+
+    function getPid(address lpToken) public override returns(uint) {
+        if (poolLenMap[lpToken] > 0) {
+            return poolLenMap[lpToken] - 1;
+        }
+        return uint(-1);
     }
 
     function setOps(address op, bool enable) public onlyOwner {
@@ -163,6 +171,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         IERC20 _lpToken,
         uint _mdxChefPid
     ) public onlyOwner {
+        require(poolLenMap[address(_lpToken)] == 0, 'lp pool already exist');
         massUpdatePools();
         uint256 lastRewardBlock =
         block.number > startBlock ? block.number : startBlock;
@@ -171,7 +180,6 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         mdx.approve(address(treasury), uint256(-1));
         hpt.approve(address(treasury), uint256(-1));
 
-        pidMap[address(_lpToken)] = poolInfo.length;
         poolInfo.push(
             PoolInfo({
             lpToken: _lpToken,
@@ -184,6 +192,7 @@ contract MdexMasterChef is Ownable,IStakingRewards {
             treasury: treasury
             })
         );
+        poolLenMap[address(_lpToken)] = poolInfo.length;
     }
 
     // Update the given pool's HPT allocation point. Can only be called by the owner.
@@ -371,21 +380,6 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         pool.lpToken.safeTransfer(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _pid, _amount);
-    }
-
-    // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid, address _user) public checkOp {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
-
-        mdxChef.withdraw(pool.mdxChefPid, user.amount);
-        pool.lpToken.safeTransfer(msg.sender, user.amount);
-
-        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
-        pool.lpBalance = pool.lpBalance.sub(user.amount);
-        user.amount = 0;
-        user.rewardDebt = 0;
-        user.mdxRewardDebt = 0;
     }
 
     function claim(uint _pid, address _user, address to) public override checkOp {
