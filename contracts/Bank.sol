@@ -69,9 +69,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
     constructor() public {}
 
-    // function tokenBanks(address token) public view returns(TokenBank memory) {
-    //     return banks[token];
-    // }
 
     /// read
     function getBankTokens() public view returns(address[] memory) {

@@ -15,12 +15,12 @@ interface ChefLensInterface{
 
     function mdxRewardPerBlock(uint256 _pid) public view returns(uint256);
     function hptPerBlock() public view returns(uint256);
-
+    function blocksPerYear() public view returns(uint256);
+    function poolInfo(uint256 _pid) public view returns(address,uint256,uint256,uint256,uint256, uint256);
 }
 
 
 contract Lens {
-
 
     struct BankTokenMetadata {
         address tokenAddr;
@@ -65,7 +65,7 @@ contract Lens {
     }
 
 
-    function BankInfoAll(Bank bankContract) public view returns(BankTokenMetadata[] memory, ProductionMetadata[] memory){
+    function InfoAll(Bank bankContract) public view returns(BankTokenMetadata[] memory, ProductionMetadata[] memory){
 
         address[] memory tokensAddr = bankContract.getBankTokens();
         uint tokenCount = tokensAddr.length;
@@ -75,8 +75,8 @@ contract Lens {
             banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
         }
 
-        ProductionMetadata[] memory prods = new ProductionMetadata[](currentPid);
-        for(uint i = 0; i <currentPid; i++){
+        ProductionMetadata[] memory prods = new ProductionMetadata[](bankContract.currentPid());
+        for(uint i = 0; i <bankContract.currentPid(); i++){
             prods[i] = prodMetadata(bankContract,i+1);
         }
 
@@ -101,7 +101,7 @@ contract Lens {
         string memory symbol = ERC20(bankToken).symbol();
         IBankConfig config = bankContract.config();
         uint256 interestRate = config.getInterestRate(totalDebt,totalVal);
-        uint256 usage = totalDebt * 1e18 / totalVal ;
+        uint256 usage = totalDebt / totalVal ;
 
         return BankTokenMetadata({
 
@@ -124,7 +124,7 @@ contract Lens {
 
     }
 
-    function prodsMetadata(Bank bankContract,uint pid) public view returns (ProductionMetadata) {
+    function prodsMetadata(Bank bankContract,uint pid) public view returns (ProductionMetadata memory) {
 
         (
             address coinToken,
@@ -138,13 +138,21 @@ contract Lens {
             uint256 liquidateFactor
         ) = bankContract.productions(pid);
 
-       IStakingRewards chef = Goblin(goblin).staking();
-       uint256 hptPerBlock = ChefLensInterface(address(chef)).hptPerBlock();
-       uint256 mdxPerBlock = ChefLensInterface(address(chef)).mdxRewardPerBlock(pid);
+        IStakingRewards chef = Goblin(goblin).staking();
+        uint256 stakingPid = Goblin(goblin).stakingPid();
 
-        // uint256 baseYield; //基础收益率,单利
-        // uint256 hptYield;  //HPT补贴收益,单利
-        // uint256 poolValueLocked;  //挖矿池锁仓额
+        ChefLensInterface chefLens = ChefLensInterface(address(chef));
+        uint256 hptPerBlock = chefLens.hptPerBlock();
+        uint256 mdxPerBlock = chefLens.mdxRewardPerBlock(stakingPid);
+        uint256 blocksPerYear = chefLens.blocksPerYear();
+        (address lpToken,,,,,,uint256 poolLpBalance) = chefLens.poolInfo(stakingPid); //?
+
+        uint256 mdxInUsd = 30000000; //3U
+        uint256 hptInUsd = 1500000; //0.15U
+        uint256 poolValueLocked = getLpValue(lpToken,poolLpBalance);
+        uint256 baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
+        uint256 hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
+
 
         return ProductionMetadata({
             coinToken: coinToken,
@@ -155,8 +163,15 @@ contract Lens {
             goblin: goblin,
             minDebt: minDebt,
             openFactor: openFactor,
-            liquidateFactor: liquidateFactor
+            liquidateFactor: liquidateFactor,
+            baseYield: baseYield,
+            hptYield: hptYield,
+            poolValueLocked: poolValueLocked
         });
+    }
+
+    function getLpValue(address lpToken,uint256 lpBalance) internal returns(uint256){
+        return uint(100);
     }
 
 }

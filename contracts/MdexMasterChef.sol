@@ -50,6 +50,11 @@ contract MdexMasterChef is Ownable,IStakingRewards {
     }
     mapping(address => OpInfo) opInfoMap;
 
+    /**
+     * @notice The approximate number of blocks per year that is assumed by the interest rate model
+     */
+    uint public constant blocksPerYear = 10512000;
+
     // The HPT TOKEN!
     IERC20 public hpt;
     // HPT tokens created per block.
