@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
+// pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -50,7 +51,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         uint256 debtShare;
     }
 
-    IBankConfig config;
+    IBankConfig public config;
 
     mapping(address => TokenBank) public banks;
     address[] public bankTokens;
@@ -67,6 +68,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     constructor() public {}
+
+    // function tokenBanks(address token) public view returns(TokenBank memory) {
+    //     return banks[token];
+    // }
 
     /// read
     function getBankTokens() public view returns(address[] memory) {
