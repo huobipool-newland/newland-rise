@@ -11,6 +11,13 @@ import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./NTokenFactory.sol";
 
+interface ChefLensInterface{
+
+    function mdxRewardPerBlock(uint256 _pid) public view returns(uint256);
+    function hptPerBlock() public view returns(uint256);
+
+}
+
 
 contract Lens {
 
@@ -41,10 +48,14 @@ contract Lens {
         address borrowToken;
         bool isOpen;
         bool canBorrow;
-        address goblin;
-        uint256 minDebt;
-        uint256 openFactor;
-        uint256 liquidateFactor;
+
+        uint256 minDebt;   //最小借款额
+        uint256 openFactor;   //最高开仓倍数
+        uint256 liquidateFactor;  //清算限额
+
+        uint256 baseYield; //基础收益率,单利
+        uint256 hptYield;  //HPT补贴收益,单利
+        uint256 poolValueLocked;  //挖矿池锁仓额
     }
 
     struct PositionInfo {
@@ -54,7 +65,7 @@ contract Lens {
     }
 
 
-    function BankInfoAll(Bank bankContract) public view returns(BankTokenMetadata[] memory){
+    function BankInfoAll(Bank bankContract) public view returns(BankTokenMetadata[] memory, ProductionMetadata[] memory){
 
         address[] memory tokensAddr = bankContract.getBankTokens();
         uint tokenCount = tokensAddr.length;
@@ -64,8 +75,12 @@ contract Lens {
             banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
         }
 
+        ProductionMetadata[] memory prods = new ProductionMetadata[](currentPid);
+        for(uint i = 0; i <currentPid; i++){
+            prods[i] = prodMetadata(bankContract,i+1);
+        }
 
-        return banks;
+        return (banks,prods);
     }
 
     function bankTokenMetadata(Bank bankContract, address bankToken) public view returns (BankTokenMetadata memory) {
@@ -107,12 +122,42 @@ contract Lens {
 
         });
 
-
-        
-
     }
 
+    function prodsMetadata(Bank bankContract,uint pid) public view returns (ProductionMetadata) {
 
+        (
+            address coinToken,
+            address currencyToken,
+            address borrowToken,
+            bool isOpen,
+            bool canBorrow,
+            address goblin,
+            uint256 minDebt,
+            uint256 openFactor,
+            uint256 liquidateFactor
+        ) = bankContract.productions(pid);
+
+       IStakingRewards chef = Goblin(goblin).staking();
+       uint256 hptPerBlock = ChefLensInterface(address(chef)).hptPerBlock();
+       uint256 mdxPerBlock = ChefLensInterface(address(chef)).mdxRewardPerBlock(pid);
+
+        // uint256 baseYield; //基础收益率,单利
+        // uint256 hptYield;  //HPT补贴收益,单利
+        // uint256 poolValueLocked;  //挖矿池锁仓额
+
+        return ProductionMetadata({
+            coinToken: coinToken,
+            currencyToken: currencyToken,
+            borrowToken: borrowToken,
+            isOpen: isOpen,
+            canBorrow: canBorrow,
+            goblin: goblin,
+            minDebt: minDebt,
+            openFactor: openFactor,
+            liquidateFactor: liquidateFactor
+        });
+    }
 
 }
 
