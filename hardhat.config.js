@@ -5,6 +5,9 @@ require("@nomiclabs/hardhat-waffle");
  */
 module.exports = {
   solidity: "0.6.12",
+  optimizer: {
+    enabled: true
+  },
   networks: {
     hardhat: {
       chainId: 666,
@@ -22,6 +25,7 @@ module.exports = {
       accounts: {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
       },
+      allowUnlimitedContractSize: true
     }
   }
 };
