@@ -48,6 +48,10 @@ async function main() {
     )
     await goblin.setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
     await config.setParams(1, 1, model.address);
+
+    await bank.updateConfig(config.address);
+    await bank.addToken(USDT, 'nUSDT');
+    await bank.opProduction(0, true, true, USDT, goblin.address, 1, 1, 1);
 }
 
 main()

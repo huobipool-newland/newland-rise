@@ -62,6 +62,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     mapping(uint256 => Position) public positions;
     uint256 public currentPos = 1;
 
+    mapping(address => uint[]) public userPositions;
+
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "not eoa");
         _;
@@ -158,6 +160,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
             positions[posId].owner = msg.sender;
             positions[posId].productionId = pid;
 
+            userPositions[msg.sender].push(posId);
         } else {
             require(posId < currentPos, "bad position id");
             require(positions[posId].owner == msg.sender, "not position owner");
@@ -319,8 +322,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         bank.canWithdraw = canWithdraw;
     }
 
-    function opProduction(uint256 pid, bool isOpen, bool canBorrow,
-        address coinToken, address currencyToken, address borrowToken, address goblin,
+    function opProduction(uint256 pid, bool isOpen, bool canBorrow, address borrowToken, address goblin,
         uint256 minDebt, uint256 openFactor, uint256 liquidateFactor) external onlyOwner {
 
         if(pid == 0){
@@ -334,8 +336,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         production.isOpen = isOpen;
         production.canBorrow = canBorrow;
         // 地址一旦设置, 就不要再改, 可以添加新币对!
-        production.coinToken = coinToken;
-        production.currencyToken = currencyToken;
         production.borrowToken = borrowToken;
         production.goblin = goblin;
 
