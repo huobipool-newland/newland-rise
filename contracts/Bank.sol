@@ -34,8 +34,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     struct Production {
-        // address coinToken;
-        // address currencyToken;
         address borrowToken;
         bool isOpen;
         bool canBorrow;

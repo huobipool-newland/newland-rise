@@ -4,14 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "node": "npx hardhat node",
-    "script": "npx hardhat run --network localhost"
+    "nd": "npx hardhat node",
+    "ls": "npx hardhat run --network localhost",
+    "hs": "npx hardhat run --network heco",
+    "fl": "node scripts/_fl.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.1",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^3.1.0",
     "chai": "^4.3.4",

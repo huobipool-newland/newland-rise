@@ -16,6 +16,12 @@ module.exports = {
       },
       blockGasLimit: 900000000000000,
       allowUnlimitedContractSize: true
+    },
+    heco: {
+      url: "https://http-mainnet-node.huobichain.com",
+      accounts: {
+        mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
+      },
     }
   }
 };

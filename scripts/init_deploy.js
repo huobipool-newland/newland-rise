@@ -3,7 +3,6 @@ require("./_runUtil");
 let MDX_ROUTER = '0xED7d5F38C79115ca12fe6C0041abb22F0A06C300'
 let USDT = '0xa71edc38d189767582c38a3145b5873052c3e47a'
 let HUSD = '0x0298c2b32eaE4da002a15f36fdf7615BEa3DA047'
-let ADDRESS_0 = '0x0000000000000000000000000000000000000000'
 
 async function main() {
     let model = await $deploy('TripleSlopeModel')
@@ -52,6 +51,7 @@ async function main() {
     await bank.updateConfig(config.address);
     await bank.addToken(USDT, 'nUSDT');
     await bank.opProduction(0, true, true, USDT, goblin.address, 1, 1, 1);
+    await bank.opProduction(0, true, true, HUSD, goblin.address, 1, 1, 1);
 }
 
 main()
@@ -60,4 +60,3 @@ main()
         console.error(error);
         process.exit(1);
     });
-
