@@ -6,8 +6,7 @@ require('hardhat-contract-sizer');
 module.exports = {
   solidity: "0.6.12",
   optimizer: {
-    enabled: true,
-    runs: 100
+    enabled: true
   },
   contractSizer: {
     alphaSort: true,
