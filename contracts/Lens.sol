@@ -124,21 +124,8 @@ contract Lens {
 
         uint256 liqBps = bankContract.config().getLiquidateBps();
         (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
-        // (,,,address goblin,,,) = bankContract.productions(prodId);
 
-        // GoblinLensInterface goblinLens = GoblinLensInterface(goblin);
-        // uint256 lpAmount = goblinLens.posLPAmount(posId);
-        // uint256 lpValue = getLpValue(goblinLens.lpToken(),lpAmount);
-
-        // address chef = goblinLens.staking();
-        // uint256 stakingPid = goblinLens.stakingPid();
-
-       
-        // ChefLensInterface chefLens = ChefLensInterface(address(chef));
-        // uint256 mdxReward = chefLens.pendingMdx(stakingPid,owner);
-        // uint256 hptReward = chefLens.pendingHpt(stakingPid,owner);
-
-         (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,prodId,posId,owner);
+        (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,prodId,posId,owner);
         uint256 risk = calculateRisk(liqBps,debtValue,lpValue);
         
         return PositionInfo({
@@ -230,19 +217,19 @@ contract Lens {
 
     function getPoolRewardInfo(address goblin)internal view returns(address,uint,uint,uint){
         address chef = GoblinLensInterface(goblin).staking();
-        // uint256 stakingPid = GoblinLensInterface(goblin).stakingPid();
+        //uint256 stakingPid = GoblinLensInterface(goblin).stakingPid();
 
-        // ChefLensInterface chefLens = ChefLensInterface(address(chef));
-        uint256 hptPerBlock = ChefLensInterface(address(chef)).hptPerBlock();
-        uint256 mdxPerBlock = ChefLensInterface(address(chef)).mdxRewardPerBlock(GoblinLensInterface(goblin).stakingPid());
-        uint256 blocksPerYear = ChefLensInterface(address(chef)).blocksPerYear();
-        (address lpToken,,,,,uint256 poolLpBalance) = ChefLensInterface(address(chef)).poolInfo(GoblinLensInterface(goblin).stakingPid()); //?
+        ChefLensInterface chefLens = ChefLensInterface(address(chef));
+        uint256 hptPerBlock = chefLens.hptPerBlock();
+        uint256 mdxPerBlock = chefLens.mdxRewardPerBlock(GoblinLensInterface(goblin).stakingPid());
+        uint256 blocksPerYear = chefLens.blocksPerYear();
+        (address lpToken,,,,,uint256 poolLpBalance) = chefLens.poolInfo(GoblinLensInterface(goblin).stakingPid()); //?
 
-        // uint256 mdxInUsd = getPriceInUsd(chefLens.mdx());
-        // uint256 hptInUsd = getPriceInUsd(chefLens.hpt());
+        uint256 mdxInUsd = getPriceInUsd(chefLens.mdx());
+        uint256 hptInUsd = getPriceInUsd(chefLens.hpt());
         uint256 poolValueLocked = getLpValue(lpToken,poolLpBalance);
-        uint256 baseYield = mdxPerBlock * blocksPerYear * getPriceInUsd(ChefLensInterface(address(chef)).mdx()) / poolValueLocked;
-        uint256 hptYield = hptPerBlock * blocksPerYear * getPriceInUsd(ChefLensInterface(address(chef)).hpt()) / poolValueLocked;
+        uint256 baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
+        uint256 hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
 
         return (lpToken,poolValueLocked,baseYield,hptYield);
     }
