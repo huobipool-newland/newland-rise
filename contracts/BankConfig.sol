@@ -11,8 +11,6 @@ contract BankConfig is IBankConfig, Ownable {
     uint256 public override getLiquidateBps;
     InterestModel public interestModel;
 
-    constructor() public {}
-
     function setParams(uint256 _getReserveBps, uint256 _getLiquidateBps, InterestModel _interestModel) public onlyOwner {
         getReserveBps = _getReserveBps;
         getLiquidateBps = _getLiquidateBps;

@@ -52,6 +52,8 @@ async function main() {
     await bank.addToken(USDT, 'nUSDT');
     await bank.opProduction(0, true, true, USDT, goblin.address, 1, 1, 1);
     await bank.opProduction(0, true, true, HUSD, goblin.address, 1, 1, 1);
+
+    await $deploy('Lens');
 }
 
 main()

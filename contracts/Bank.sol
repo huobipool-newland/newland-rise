@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.0;
-// pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./library/SafeToken.sol";
@@ -67,20 +65,16 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         _;
     }
 
-    constructor() public {}
-
-
     /// read
-    function getBankTokens() public view returns(address[] memory) {
+    function getBankTokens() external view returns(address[] memory) {
         return bankTokens;
     }
 
-    /// read
-    function getUserPositions(address userAddr) public view returns(uint[] memory) {
+    function getUserPositions(address userAddr) external view returns(uint[] memory) {
         return userPositions[userAddr];
     }
 
-    function positionInfo(uint256 posId) public view returns (uint256, uint256, uint256, address) {
+    function positionInfo(uint256 posId) external view returns (uint256, uint256, uint256, address) {
         Position storage pos = positions[posId];
         Production storage prod = productions[pos.productionId];
 
@@ -114,7 +108,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         return debtVal.mul(bank.totalDebtShare).div(bank.totalDebt);
     }
 
-
     /// write
     function deposit(address token, uint256 amount) external payable nonReentrant {
         TokenBank storage bank = banks[token];
@@ -146,17 +139,11 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         bank.totalVal = bank.totalVal.sub(amount);
 
         NToken(bank.nTokenAddr).burn(msg.sender, pAmount);
-
-        if (token == address(0)) {//HT
-            SafeToken.safeTransferETH(msg.sender, amount);
-        } else {
-            SafeToken.safeTransfer(token, msg.sender, amount);
-        }
+        opTransfer(token, msg.sender, amount);
     }
 
     function opPosition(uint256 posId, uint256 pid, uint256 borrow, bytes calldata data)
     external payable onlyEOA nonReentrant {
-
         if (posId == 0) {
             posId = currentPos;
             currentPos ++;
@@ -186,7 +173,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
             sendHT = sendHT.add(borrow);
             require(sendHT <= address(this).balance && debt <= banks[production.borrowToken].totalVal, "insufficient HT in the bank");
             beforeToken = address(this).balance.sub(sendHT);
-
         } else {
             beforeToken = SafeToken.myBalance(production.borrowToken);
             require(borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal, "insufficient borrowToken in the bank");
@@ -205,7 +191,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
             isBorrowHt? SafeToken.safeTransferETH(msg.sender, backToken):
             SafeToken.safeTransfer(production.borrowToken, msg.sender, backToken);
-
         } else if (debt > backToken) { //有借款
             debt = debt.sub(backToken);
             backToken = 0;
@@ -378,6 +363,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
             bank.totalVal = bank.totalVal.sub(value);
         }
 
+        opTransfer(token, to, value);
+    }
+
+    function opTransfer(address token, address to, uint value) internal {
         if (token == address(0)) {
             SafeToken.safeTransferETH(to, value);
         } else {

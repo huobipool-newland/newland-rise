@@ -18,12 +18,12 @@ async function deploy(name, ...args) {
         if (!data[chainId]) {
             data[chainId] = {}
         }
+        let key = name+ '/' +args.join(',')
         let chainData = data[chainId]
-        let address = getAddress(chainData, name)
+        let address = chainData[key]
         if (address) {
             contract = Contract.attach(address);
         } else {
-            let key = name+ '/' + dayJs().format('YYYY-MM-DD hh:mm:ss') + "/" +args.join(',')
             contract = await Contract.deploy(...args)
             chainData[key] = contract.address;
             fs.writeFileSync(dataPath, JSON.stringify(data, null, 2))
@@ -34,14 +34,6 @@ async function deploy(name, ...args) {
 
     console.log("Contract address:", contract.address);
     return contract
-}
-
-function getAddress(data, name) {
-    for (let key of Object.keys(data).reverse()) {
-        if (key.startsWith(`${name}/`)) {
-            return data[key]
-        }
-    }
 }
 
 global.$deploy = deploy

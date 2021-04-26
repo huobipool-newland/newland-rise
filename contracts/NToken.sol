@@ -2,13 +2,9 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./library/SafeToken.sol";
 
 contract NToken is ERC20, Ownable {
-    using SafeToken for address;
-    using SafeMath for uint256;
 
     event Mint(address sender, address account, uint amount);
     event Burn(address sender, address account, uint amount);

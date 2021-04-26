@@ -419,3 +419,4 @@ contract MdexMasterChef is Ownable,IStakingRewards {
 fallback() external {}
 receive() payable external {}
 }
+
