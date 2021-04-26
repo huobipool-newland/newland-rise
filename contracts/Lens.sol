@@ -113,14 +113,14 @@ contract Lens {
 
         PositionInfo[] memory info = new PositionInfo[](positionsCount);
         for(uint i = 0; i < positionsCount; i++){
-            info[i] = userPostions(userAddr, bankContract,positions[i]);
+            info[i] = userPostions(bankContract,positions[i]);
         }
 
         return info;
 
     }
 
-    function userPostions(address userAddr, Bank bankContract,uint posId) internal view returns(PositionInfo memory){
+    function userPostions( Bank bankContract,uint posId) internal view returns(PositionInfo memory){
 
         uint256 liqBps = bankContract.config().getLiquidateBps();
         (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
