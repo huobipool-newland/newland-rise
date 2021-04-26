@@ -7,7 +7,7 @@ module.exports = {
   solidity: "0.6.12",
   networks: {
     hardhat: {
-      chainId: 1,
+      chainId: 666,
       forking: {
         url: "https://http-mainnet-node.huobichain.com"
       },

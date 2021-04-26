@@ -94,7 +94,7 @@ contract Lens {
 
         address[] memory tokensAddr = bankContract.getBankTokens();
         uint tokenCount = tokensAddr.length;
-        
+
         BankTokenMetadata[] memory banks = new BankTokenMetadata[](tokenCount);
         for(uint i = 0; i < tokenCount; i++){
             banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
@@ -110,7 +110,7 @@ contract Lens {
 
     function userPostionAll(address userAddr, Bank bankContract) public view returns(PositionInfo[] memory){
 
-        
+
 
         uint[] memory positions = bankContract.getUserPositions(userAddr);
         uint positionsCount = positions.length;
@@ -119,9 +119,9 @@ contract Lens {
         for(uint i = 0; i < positionsCount; i++){
             //info[i] = userPostions(userAddr, bankContract,positions[i]);
             // (uint256 prodId, uint256 healthAmount, uint256 debtValue,) = bankContract.positionInfo(positions[i]);
-            
+
             // (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,userAddr,prodId,positions[i]);
-            
+
             // info[i] = PositionInfo({
             //     posId: positions[i],
             //     prodId: prodId,
@@ -157,7 +157,7 @@ contract Lens {
     //     uint256 hptReward = chefLens.pendingHpt(stakingPid,userAddr);
 
     //     //(uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,userAddr,prodId,posId);
-        
+
     //     return PositionInfo({
     //         posId: posId,
     //         prodId: prodId,
@@ -181,14 +181,14 @@ contract Lens {
             uint256 totalVal,
             uint256 totalDebt,
             uint256 totalDebtShare
-            ,, 
+            ,,
         ) = bankContract.banks(bankToken);
 
         string memory symbol = ERC20(bankToken).symbol();
-        
+
         uint256 interestRate = bankContract.config().getInterestRate(totalDebt,totalVal);
         uint256 priceInUsd = getPriceInUsd(bankToken);
-    
+
 
         return BankTokenMetadata({
 
@@ -265,7 +265,7 @@ contract Lens {
     }
 
     function getUserRewardInfo(Bank bankContract,address userAddr, uint prodId, uint posId) internal view returns(uint,uint,uint,uint){
-        
+
         (,,,address goblin,,,) = bankContract.productions(prodId);
 
         GoblinLensInterface goblinLens = GoblinLensInterface(goblin);
