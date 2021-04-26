@@ -5,12 +5,10 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Bank.sol";
 import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./interface/IMdexPair.sol";
-import "./interface/IStakingRewards.sol";
 
 
 interface ChefLensInterface{
@@ -110,66 +108,51 @@ contract Lens {
 
     function userPostionAll(address userAddr, Bank bankContract) public view returns(PositionInfo[] memory){
 
-
-
         uint[] memory positions = bankContract.getUserPositions(userAddr);
         uint positionsCount = positions.length;
 
         PositionInfo[] memory info = new PositionInfo[](positionsCount);
         for(uint i = 0; i < positionsCount; i++){
-            //info[i] = userPostions(userAddr, bankContract,positions[i]);
-            // (uint256 prodId, uint256 healthAmount, uint256 debtValue,) = bankContract.positionInfo(positions[i]);
-
-            // (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,userAddr,prodId,positions[i]);
-
-            // info[i] = PositionInfo({
-            //     posId: positions[i],
-            //     prodId: prodId,
-            //     debtValue:debtValue,
-            //     healthAmount: healthAmount,
-            //     lpAmount: lpAmount,
-            //     lpValue: lpValue,
-            //     risk: calculateRisk(liqBps,debtValue,lpValue),
-            //     mdxReward: mdxReward,
-            //     hptReward: hptReward
-            // });
+            info[i] = userPostions(userAddr, bankContract,positions[i]);
         }
 
         return info;
 
     }
 
-    // function userPostions(address userAddr, Bank bankContract,uint posId) internal view returns(PositionInfo memory){
+    function userPostions(address userAddr, Bank bankContract,uint posId) internal view returns(PositionInfo memory){
 
-    //     uint256 liqBps = bankContract.config().getLiquidateBps();
-    //     (uint256 prodId, uint256 healthAmount, uint256 debtValue,) = bankContract.positionInfo(posId);
-    //     (,,,address goblin,,,) = bankContract.productions(prodId);
+        uint256 liqBps = bankContract.config().getLiquidateBps();
+        (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
+        // (,,,address goblin,,,) = bankContract.productions(prodId);
 
-    //     GoblinLensInterface goblinLens = GoblinLensInterface(goblin);
-    //     uint256 lpAmount = goblinLens.posLPAmount(posId);
-    //     uint256 lpValue = getLpValue(goblinLens.lpToken(),lpAmount);
+        // GoblinLensInterface goblinLens = GoblinLensInterface(goblin);
+        // uint256 lpAmount = goblinLens.posLPAmount(posId);
+        // uint256 lpValue = getLpValue(goblinLens.lpToken(),lpAmount);
 
-    //     address chef = goblinLens.staking();
-    //     uint256 stakingPid = goblinLens.stakingPid();
+        // address chef = goblinLens.staking();
+        // uint256 stakingPid = goblinLens.stakingPid();
 
-    //     ChefLensInterface chefLens = ChefLensInterface(address(chef));
-    //     uint256 mdxReward = chefLens.pendingMdx(stakingPid,userAddr);
-    //     uint256 hptReward = chefLens.pendingHpt(stakingPid,userAddr);
+       
+        // ChefLensInterface chefLens = ChefLensInterface(address(chef));
+        // uint256 mdxReward = chefLens.pendingMdx(stakingPid,owner);
+        // uint256 hptReward = chefLens.pendingHpt(stakingPid,owner);
 
-    //     //(uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,userAddr,prodId,posId);
-
-    //     return PositionInfo({
-    //         posId: posId,
-    //         prodId: prodId,
-    //         debtValue:debtValue,
-    //         healthAmount: healthAmount,
-    //         lpAmount: lpAmount,
-    //         lpValue: lpValue,
-    //         risk: calculateRisk(liqBps,debtValue,lpValue),
-    //         mdxReward: mdxReward,
-    //         hptReward: hptReward
-    //     });
-    // }
+         (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,prodId,posId,owner);
+        uint256 risk = calculateRisk(liqBps,debtValue,lpValue);
+        
+        return PositionInfo({
+            posId: posId,
+            prodId: prodId,
+            debtValue:debtValue,
+            healthAmount: healthAmount,
+            lpAmount: lpAmount,
+            lpValue: lpValue,
+            risk: risk,
+            mdxReward: mdxReward,
+            hptReward: hptReward
+        });
+    }
     function bankTokenMetadata(Bank bankContract, address bankToken) public view returns (BankTokenMetadata memory) {
 
         (
@@ -264,20 +247,17 @@ contract Lens {
         return (lpToken,poolValueLocked,baseYield,hptYield);
     }
 
-    function getUserRewardInfo(Bank bankContract,address userAddr, uint prodId, uint posId) internal view returns(uint,uint,uint,uint){
-
+    function getUserRewardInfo(Bank bankContract, uint prodId, uint posId,address owner) internal view returns(uint,uint,uint,uint){
+        
         (,,,address goblin,,,) = bankContract.productions(prodId);
-
+        
         GoblinLensInterface goblinLens = GoblinLensInterface(goblin);
         uint256 lpAmount = goblinLens.posLPAmount(posId);
         uint256 lpValue = getLpValue(goblinLens.lpToken(),lpAmount);
 
-        address chef = goblinLens.staking();
-        uint256 stakingPid = goblinLens.stakingPid();
-
-        ChefLensInterface chefLens = ChefLensInterface(address(chef));
-        uint256 mdxReward = chefLens.pendingMdx(stakingPid,userAddr);
-        uint256 hptReward = chefLens.pendingHpt(stakingPid,userAddr);
+        ChefLensInterface chefLens = ChefLensInterface(address(goblinLens.staking()));
+        uint256 mdxReward = chefLens.pendingMdx(goblinLens.stakingPid(),owner);
+        uint256 hptReward = chefLens.pendingHpt(goblinLens.stakingPid(),owner);
 
         return (lpAmount,lpValue,mdxReward,hptReward);
     }
