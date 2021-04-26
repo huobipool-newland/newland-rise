@@ -34,8 +34,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     struct Production {
-        address coinToken;
-        address currencyToken;
+        // address coinToken;
+        // address currencyToken;
         address borrowToken;
         bool isOpen;
         bool canBorrow;
@@ -75,6 +75,11 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     /// read
     function getBankTokens() public view returns(address[] memory) {
         return bankTokens;
+    }
+
+    /// read
+    function getUserPositions(address userAddr) public view returns(uint[] memory) {
+        return userPositions[userAddr];
     }
 
     function positionInfo(uint256 posId) public view returns (uint256, uint256, uint256, address) {
