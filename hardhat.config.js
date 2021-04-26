@@ -4,9 +4,14 @@ require('hardhat-contract-sizer');
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.6.12",
-  optimizer: {
-    enabled: true
+  solidity: {
+    version: "0.6.12",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1
+      }
+    }
   },
   contractSizer: {
     alphaSort: true,
