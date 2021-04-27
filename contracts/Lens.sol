@@ -9,7 +9,7 @@ import "./Bank.sol";
 import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./interface/IMdexPair.sol";
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 
 interface ChefLensInterface{
@@ -90,19 +90,19 @@ contract Lens {
 
 
     function infoAll(Bank bankContract) public view returns(BankTokenMetadata[] memory, ProductionMetadata[] memory){
-        console.log(bankContract);
+        //console.log(address(bankContract));
         address[] memory tokensAddr = bankContract.getBankTokens();
         uint tokenCount = tokensAddr.length;
-        console.log("",tokensAddr);
+        //console.log(tokenCount);
         BankTokenMetadata[] memory banks = new BankTokenMetadata[](tokenCount);
-//        for(uint i = 0; i < tokenCount; i++){
-//            banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
-//        }
-
-        ProductionMetadata[] memory prods = new ProductionMetadata[](bankContract.currentPid());
-//        for(uint i = 0; i <bankContract.currentPid(); i++){
-//            prods[i] = prodsMetadata(bankContract,i+1);
-//        }
+        for(uint i = 0; i < tokenCount; i++){
+            banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
+        }
+        //console.log("currentPid: %s",bankContract.currentPid());
+        ProductionMetadata[] memory prods = new ProductionMetadata[](bankContract.currentPid()-1);
+        for(uint i = 1; i <bankContract.currentPid(); i++){
+            prods[i-1] = prodsMetadata(bankContract,i);
+        }
 
         return (banks,prods);
     }
@@ -156,10 +156,16 @@ contract Lens {
         ) = bankContract.banks(bankToken);
 
         string memory symbol = ERC20(bankToken).symbol();
-
+        //console.log(symbol);
         uint256 interestRate = bankContract.config().getInterestRate(totalDebt,totalVal);
+        //console.log(interestRate);
         uint256 priceInUsd = getPriceInUsd(bankToken);
+        //console.log(priceInUsd);
 
+        uint usage = 0;
+        if (totalVal > 0){
+            usage = totalDebt.div(totalVal);
+        }
 
         return BankTokenMetadata({
 
@@ -174,7 +180,7 @@ contract Lens {
             symbol: symbol,
             supplyRate: interestRate,
             borrowRate: interestRate,
-            usage: totalDebt.div(totalVal) ,
+            usage: usage ,
             priceInUsd: priceInUsd
         });
 
@@ -218,20 +224,23 @@ contract Lens {
 
     function getPoolRewardInfo(address goblin)internal view returns(address,uint,uint,uint){
         address chef = GoblinLensInterface(goblin).staking();
-        //uint256 stakingPid = GoblinLensInterface(goblin).stakingPid();
 
-        ChefLensInterface chefLens = ChefLensInterface(address(chef));
+        ChefLensInterface chefLens = ChefLensInterface(chef);
         uint256 hptPerBlock = chefLens.hptPerBlock();
         uint256 mdxPerBlock = chefLens.mdxRewardPerBlock(GoblinLensInterface(goblin).stakingPid());
         uint256 blocksPerYear = chefLens.blocksPerYear();
-        (address lpToken,,,,,uint256 poolLpBalance) = chefLens.poolInfo(GoblinLensInterface(goblin).stakingPid()); //?
+        (address lpToken,,,,,uint256 poolLpBalance) = chefLens.poolInfo(GoblinLensInterface(goblin).stakingPid()); 
 
         uint256 mdxInUsd = getPriceInUsd(chefLens.mdx());
         uint256 hptInUsd = getPriceInUsd(chefLens.hpt());
         uint256 poolValueLocked = getLpValue(lpToken,poolLpBalance);
-        uint256 baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
-        uint256 hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
-
+        uint256 baseYield = 0;
+        uint256 hptYield = 0;
+        if( poolValueLocked > 0) {
+            uint256 baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
+            uint256 hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
+        }
+        
         return (lpToken,poolValueLocked,baseYield,hptYield);
     }
 

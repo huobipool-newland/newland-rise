@@ -1,9 +1,8 @@
 require("./_runUtil");
-const hre = require("hardhat");
 
 async function main() {
     const bankAddress = '0x136d20E70628a27340f94fA58DaAF1ABF9440A9B';
-    const bankContract = await hre.ethers.getContractAt("Bank",bankAddress);
+    const bankContract = await ethers.getContractAt("Bank",bankAddress);
     const lensContract = await $deploy('Lens');
 
     const infoAll =  await lensContract.infoAll(bankContract.address);
