@@ -22,11 +22,13 @@ async function main() {
     // ------ 10 0xdff86B408284dff30A7CAD7688fEdB465734501C 193
     // HUSD 0x0298c2b32eaE4da002a15f36fdf7615BEa3DA047
     // USDT 0xa71EdC38d189767582C38A3145b5873052c3e47a
-    await chef.add(
-        1,//allocPoint,
-        '0xdff86B408284dff30A7CAD7688fEdB465734501C',//lpToken,
-        10//mdxChefPid
-    );
+    if (chef.$isNew) {
+        await chef.add(
+            1,//allocPoint,
+            '0xdff86B408284dff30A7CAD7688fEdB465734501C',//lpToken,
+            10//mdxChefPid
+        );
+    }
 
     let liqStrategy = await $deploy('LiqStrategy');
 
@@ -45,13 +47,19 @@ async function main() {
     let mdxWithdrawStrategy =await $deploy('MdxStrategyWithdrawMinimizeTrading',
         MDX_ROUTER,
     )
-    await goblin.setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
-    await config.setParams(1, 1, model.address);
 
-    await bank.updateConfig(config.address);
-    await bank.addToken(USDT, 'nUSDT');
-    await bank.opProduction(0, true, true, USDT, goblin.address, 1, 1, 1);
-    await bank.opProduction(0, true, true, HUSD, goblin.address, 1, 1, 1);
+    if (goblin.$isNew) {
+        await goblin.setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
+    }
+    if (config.$isNew) {
+        await config.setParams(1, 1, model.address);
+    }
+    if (bank.$isNew) {
+        await bank.updateConfig(config.address);
+        await bank.addToken(USDT, 'nUSDT');
+        await bank.opProduction(0, true, true, USDT, goblin.address, 1, 1, 1);
+        await bank.opProduction(0, true, true, HUSD, goblin.address, 1, 1, 1);
+    }
 
     await $deploy('Lens');
 }
