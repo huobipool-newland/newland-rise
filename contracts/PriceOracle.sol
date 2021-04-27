@@ -5,7 +5,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 
-contract Oracle is Ownable{
+contract PriceOracle is Ownable{
     struct DataInfo {
         AggregatorV3Interface priceFeed;
         int wrapperPrice;
@@ -17,7 +17,7 @@ contract Oracle is Ownable{
         dataInfoMap[token].priceFeed = priceFeed;
     }
 
-    function setWrapper(address token, int price, uint timeStamp) public onlyOwner {
+    function setWrapperPrice(address token, int price, uint timeStamp) public onlyOwner {
         dataInfoMap[token].wrapperPrice = price;
         dataInfoMap[token].wrapperTimeStamp = timeStamp;
     }

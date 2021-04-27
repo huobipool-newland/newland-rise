@@ -9,6 +9,7 @@ import "./Bank.sol";
 import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./interface/IMdexPair.sol";
+import "./PriceOracle.sol";
 // import "hardhat/console.sol";
 
 
@@ -40,6 +41,9 @@ interface GoblinLensInterface{
 contract Lens {
 
     using SafeMath for uint256;
+
+    Bank bankContract;
+    PriceOracle  priceOracle;
 
     struct BankTokenMetadata {
         address tokenAddr;
@@ -88,8 +92,12 @@ contract Lens {
         uint256 hptReward;
     }
 
+    constructor(Bank bank,PriceOracle oracle) public {
+        bankContract = bank;
+        priceOracle = oracle;
+    }
 
-    function infoAll(Bank bankContract) public view returns(BankTokenMetadata[] memory, ProductionMetadata[] memory){
+    function infoAll() public view returns(BankTokenMetadata[] memory, ProductionMetadata[] memory){
         //console.log(address(bankContract));
         address[] memory tokensAddr = bankContract.getBankTokens();
         uint tokenCount = tokensAddr.length;
@@ -107,7 +115,7 @@ contract Lens {
         return (banks,prods);
     }
 
-    function userPostionAll(address userAddr, Bank bankContract) public view returns(PositionInfo[] memory){
+    function userPostionAll(address userAddr) public view returns(PositionInfo[] memory){
 
         uint[] memory positions = bankContract.getUserPositions(userAddr);
         uint positionsCount = positions.length;
@@ -121,7 +129,7 @@ contract Lens {
 
     }
 
-    function userPostions( Bank bankContract,uint posId) internal view returns(PositionInfo memory){
+    function userPostions( uint posId) internal view returns(PositionInfo memory){
 
         uint256 liqBps = bankContract.config().getLiquidateBps();
         (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
@@ -141,7 +149,7 @@ contract Lens {
             hptReward: hptReward
         });
     }
-    function bankTokenMetadata(Bank bankContract, address bankToken) public view returns (BankTokenMetadata memory) {
+    function bankTokenMetadata(address bankToken) public view returns (BankTokenMetadata memory) {
 
         (
             address tokenAddr,
@@ -186,7 +194,7 @@ contract Lens {
 
     }
 
-    function prodsMetadata(Bank bankContract,uint pid) public view returns (ProductionMetadata memory) {
+    function prodsMetadata(uint pid) public view returns (ProductionMetadata memory) {
 
         (
             address borrowToken,
@@ -244,7 +252,7 @@ contract Lens {
         return (lpToken,poolValueLocked,baseYield,hptYield);
     }
 
-    function getUserRewardInfo(Bank bankContract, uint prodId, uint posId,address owner) internal view returns(uint,uint,uint,uint){
+    function getUserRewardInfo(uint prodId, uint posId,address owner) internal view returns(uint,uint,uint,uint){
         
         (,,,address goblin,,,) = bankContract.productions(prodId);
         
@@ -287,8 +295,9 @@ contract Lens {
         return risk;
     }
 
-    function getPriceInUsd(address token) public pure returns(uint256){
-        return uint(100);
+    function getPriceInUsd(address token) public pure returns(int){
+        (int price, uint timeStamp) = priceOracle.getPrice(token);
+        return price;
     }
 
 }
