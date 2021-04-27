@@ -11,7 +11,7 @@ contract Oracle is Ownable{
         int wrapperPrice;
         uint wrapperTimeStamp;
     }
-    mapping(address => DataInfo) dataInfoMap;
+    mapping(address => DataInfo) public dataInfoMap;
 
     function setPriceFeed(address token, AggregatorV3Interface priceFeed) public onlyOwner {
         dataInfoMap[token].priceFeed = priceFeed;
