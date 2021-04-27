@@ -8,8 +8,8 @@ import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 contract PriceOracle is Ownable{
     struct DataInfo {
         AggregatorV3Interface priceFeed;
-        int wrapperPrice;
-        uint wrapperTimeStamp;
+        int price;
+        uint timeStamp;
     }
     mapping(address => DataInfo) public dataInfoMap;
 
@@ -17,9 +17,9 @@ contract PriceOracle is Ownable{
         dataInfoMap[token].priceFeed = priceFeed;
     }
 
-    function setWrapperPrice(address token, int price, uint timeStamp) public onlyOwner {
-        dataInfoMap[token].wrapperPrice = price;
-        dataInfoMap[token].wrapperTimeStamp = timeStamp;
+    function setPriceWrapper(address token, int price) public onlyOwner {
+        dataInfoMap[token].price = price;
+        dataInfoMap[token].timeStamp = block.timestamp;
     }
 
     /**
@@ -41,8 +41,8 @@ contract PriceOracle is Ownable{
             ) = priceFeed.latestRoundData();
         }
         if (price <= 0) {
-            price = data.wrapperPrice;
-            timeStamp = data.wrapperTimeStamp;
+            price = data.price;
+            timeStamp = data.timeStamp;
         }
         return (price, timeStamp);
     }

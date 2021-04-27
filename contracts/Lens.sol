@@ -92,7 +92,7 @@ contract Lens {
         uint256 hptReward;
     }
 
-    constructor(Bank bank,PriceOracle oracle) public {
+    constructor(Bank bank, PriceOracle oracle) public {
         bankContract = bank;
         priceOracle = oracle;
     }
@@ -136,7 +136,7 @@ contract Lens {
 
         (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(prodId,posId,owner);
         uint256 risk = calculateRisk(liqBps,debtValue,lpValue);
-        
+
         return PositionInfo({
             posId: posId,
             prodId: prodId,
@@ -237,7 +237,7 @@ contract Lens {
         uint256 hptPerBlock = chefLens.hptPerBlock();
         uint256 mdxPerBlock = chefLens.mdxRewardPerBlock(GoblinLensInterface(goblin).stakingPid());
         uint256 blocksPerYear = chefLens.blocksPerYear();
-        (address lpToken,,,,,uint256 poolLpBalance) = chefLens.poolInfo(GoblinLensInterface(goblin).stakingPid()); 
+        (address lpToken,,,,,uint256 poolLpBalance) = chefLens.poolInfo(GoblinLensInterface(goblin).stakingPid());
 
         uint256 mdxInUsd = getPriceInUsd(chefLens.mdx());
         uint256 hptInUsd = getPriceInUsd(chefLens.hpt());
@@ -248,14 +248,14 @@ contract Lens {
             uint256 baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
             uint256 hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
         }
-        
+
         return (lpToken,poolValueLocked,baseYield,hptYield);
     }
 
     function getUserRewardInfo(uint prodId, uint posId,address owner) internal view returns(uint,uint,uint,uint){
-        
+
         (,,,address goblin,,,) = bankContract.productions(prodId);
-        
+
         GoblinLensInterface goblinLens = GoblinLensInterface(goblin);
         uint256 lpAmount = goblinLens.posLPAmount(posId);
         uint256 lpValue = getLpValue(goblinLens.lpToken(),lpAmount);
@@ -286,7 +286,7 @@ contract Lens {
     }
 
     function calculateRisk(uint256 liqBps,uint256 debtValue, uint256 lpValue) public pure returns(uint256){
-        
+
         //借贷率 = 借款/总资产
         //风险值 = 借贷率/0.85
 
@@ -302,7 +302,7 @@ contract Lens {
         }else{
             return uint(0);
         }
-        
+
     }
 
 }
