@@ -62,5 +62,11 @@ async function getAddress(name) {
     }
 }
 
+async function getContract(name) {
+    const Contract = await ethers.getContractFactory(name);
+    return Contract.attach(await getAddress(name));
+}
+
 global.$deploy = deploy
 global.$getAddress = getAddress
+global.$getContract = getContract
