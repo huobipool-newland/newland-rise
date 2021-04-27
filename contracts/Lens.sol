@@ -9,6 +9,7 @@ import "./Bank.sol";
 import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./interface/IMdexPair.sol";
+import "hardhat/console.sol";
 
 
 interface ChefLensInterface{
@@ -89,19 +90,19 @@ contract Lens {
 
 
     function infoAll(Bank bankContract) public view returns(BankTokenMetadata[] memory, ProductionMetadata[] memory){
-
+        console.log(bankContract);
         address[] memory tokensAddr = bankContract.getBankTokens();
         uint tokenCount = tokensAddr.length;
-
+        console.log("",tokensAddr);
         BankTokenMetadata[] memory banks = new BankTokenMetadata[](tokenCount);
-        for(uint i = 0; i < tokenCount; i++){
-            banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
-        }
+//        for(uint i = 0; i < tokenCount; i++){
+//            banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
+//        }
 
         ProductionMetadata[] memory prods = new ProductionMetadata[](bankContract.currentPid());
-        for(uint i = 0; i <bankContract.currentPid(); i++){
-            prods[i] = prodsMetadata(bankContract,i+1);
-        }
+//        for(uint i = 0; i <bankContract.currentPid(); i++){
+//            prods[i] = prodsMetadata(bankContract,i+1);
+//        }
 
         return (banks,prods);
     }

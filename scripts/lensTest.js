@@ -1,13 +1,19 @@
-
-const bankAddress = '0xEb736cC865945725f329309a488E652A2d44Dc0E';
-const lensAddress = '0xEb736cC865945725f329309a488E652A2d44Dc0E';
-
-
+require("./_runUtil");
+const hre = require("hardhat");
 
 async function main() {
-    const lensContract = await ethers.getContractAt("Lens",lensAddress);
+    const bankAddress = '0x136d20E70628a27340f94fA58DaAF1ABF9440A9B';
+    const bankContract = await hre.ethers.getContractAt("Bank",bankAddress);
+    const lensContract = await $deploy('Lens');
 
-    await lensContract.infoAll(bankAddress);
+    const infoAll =  await lensContract.infoAll(bankContract.address);
+
+   //address userAddr, Bank bankContract
+//    const userPostionAll = lensContract.userPostionAll(lensAddress, );
+
+    console.log("lens Test infoAll:", infoAll);
+//    console.log("lens Test userPostionAll:", userPostionAll);
+
 
     
 }
