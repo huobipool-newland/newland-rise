@@ -3,18 +3,13 @@ require("./_runUtil");
 async function main() {
     const bankAddress = '0x136d20E70628a27340f94fA58DaAF1ABF9440A9B';
     const bankContract = await ethers.getContractAt("Bank",bankAddress);
-    const lensContract = await $deploy('Lens');
-
-    const infoAll =  await lensContract.infoAll(bankContract.address);
-
-   //address userAddr, Bank bankContract
-//    const userPostionAll = lensContract.userPostionAll(lensAddress, );
-
-    console.log("lens Test infoAll:", infoAll);
-//    console.log("lens Test userPostionAll:", userPostionAll);
-
-
+    console.log(await $getAddress('PriceOracle', 128))
     
+    const lensContract = await $deploy('Lens',bankAddress, await $getAddress('PriceOracle', 128));
+
+    const infoAll =  await lensContract.infoAll();
+
+    console.log(infoAll);
 }
 
 main()

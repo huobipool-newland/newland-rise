@@ -245,8 +245,8 @@ contract Lens {
         uint256 baseYield = 0;
         uint256 hptYield = 0;
         if( poolValueLocked > 0) {
-            uint256 baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
-            uint256 hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
+            baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
+            hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
         }
 
         return (lpToken,poolValueLocked,baseYield,hptYield);
@@ -296,7 +296,7 @@ contract Lens {
     }
 
     function getPriceInUsd(address token) public view returns(uint){
-        (int price, uint timeStamp) = priceOracle.getPrice(token);
+        (int price,) = priceOracle.getPrice(token);
         if(price > 0){
             return uint(price);
         }else{
