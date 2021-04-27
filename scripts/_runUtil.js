@@ -39,8 +39,10 @@ async function deploy(name, ...args) {
     return contract
 }
 
-async function getAddress(name) {
-    let chainId = (await ethers.provider.getNetwork()).chainId
+async function getAddress(name, chainId) {
+    if (chainId !== 0 && !chainId) {
+        chainId = (await ethers.provider.getNetwork()).chainId
+    }
     if (chainId !== 666) {
         if (!fs.existsSync(dataPath)) {
             return null
