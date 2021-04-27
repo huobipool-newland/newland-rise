@@ -104,12 +104,12 @@ contract Lens {
         //console.log(tokenCount);
         BankTokenMetadata[] memory banks = new BankTokenMetadata[](tokenCount);
         for(uint i = 0; i < tokenCount; i++){
-            banks[i] = bankTokenMetadata(bankContract,tokensAddr[i]);
+            banks[i] = bankTokenMetadata(tokensAddr[i]);
         }
         //console.log("currentPid: %s",bankContract.currentPid());
         ProductionMetadata[] memory prods = new ProductionMetadata[](bankContract.currentPid()-1);
         for(uint i = 1; i <bankContract.currentPid(); i++){
-            prods[i-1] = prodsMetadata(bankContract,i);
+            prods[i-1] = prodsMetadata(i);
         }
 
         return (banks,prods);
@@ -122,7 +122,7 @@ contract Lens {
 
         PositionInfo[] memory info = new PositionInfo[](positionsCount);
         for(uint i = 0; i < positionsCount; i++){
-            info[i] = userPostions(bankContract,positions[i]);
+            info[i] = userPostions(positions[i]);
         }
 
         return info;
@@ -134,7 +134,7 @@ contract Lens {
         uint256 liqBps = bankContract.config().getLiquidateBps();
         (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
 
-        (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(bankContract,prodId,posId,owner);
+        (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(prodId,posId,owner);
         uint256 risk = calculateRisk(liqBps,debtValue,lpValue);
         
         return PositionInfo({
@@ -295,9 +295,14 @@ contract Lens {
         return risk;
     }
 
-    function getPriceInUsd(address token) public pure returns(int){
+    function getPriceInUsd(address token) public view returns(uint){
         (int price, uint timeStamp) = priceOracle.getPrice(token);
-        return price;
+        if(price > 0){
+            return uint(price);
+        }else{
+            return uint(0);
+        }
+        
     }
 
 }
