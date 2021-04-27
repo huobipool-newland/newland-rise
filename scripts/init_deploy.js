@@ -57,6 +57,7 @@ async function main() {
     if (bank.$isNew) {
         await bank.updateConfig(config.address);
         await bank.addToken(USDT, 'nUSDT');
+        await bank.addToken(HUSD, 'nHUSD');
         await bank.opProduction(0, true, true, USDT, goblin.address, 1, 1, 1);
         await bank.opProduction(0, true, true, HUSD, goblin.address, 1, 1, 1);
     }
