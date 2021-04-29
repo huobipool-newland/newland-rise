@@ -10,6 +10,10 @@ async function main() {
     const infoAll =  await lensContract.infoAll();
 
     console.log(infoAll);
+
+    const userAll =  await lensContract.userAll('0xd0D6e0e58fE68bd495B4FD56bfF3B19676460272');
+
+    console.log(userAll);
 }
 
 main()

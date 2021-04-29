@@ -48,28 +48,28 @@ contract Lens {
     struct BankTokenMetadata {
         address tokenAddr;
         address nTokenAddr;
-        bool isOpen;
-        bool canDeposit;
-        bool canWithdraw;
+        bool    isOpen;
+        bool    canDeposit;
+        bool    canWithdraw;
         uint256 totalVal;
         uint256 totalDebt;
         uint256 totalDebtShare;
 
-        string symbol;
+        string  symbol;
         uint256 supplyRate;
         uint256 borrowRate;
         uint256 usage;
         uint256 priceInUsd;
-
     }
 
     struct ProductionMetadata {
         address lpToken;
+        string  lpSymbol;
         address token0;
         address token1;
         address borrowToken;
-        bool isOpen;
-        bool canBorrow;
+        bool    isOpen;
+        bool    canBorrow;
 
         uint256 minDebt;   //最小借款额
         uint256 openFactor;   //最高开仓倍数
@@ -87,9 +87,20 @@ contract Lens {
         uint256 healthAmount;
         uint256 lpAmount;
         uint256 lpValue;
+        uint256 token0Amount;
+        uint256 token1Amount;
         uint256 risk;
         uint256 mdxReward;
         uint256 hptReward;
+    }
+
+    struct DepositInfo {
+        address tokenAddr;
+        address nTokenAddr;
+        string  symbol;
+        uint256 amount;
+        uint256 value;
+        uint256 reward;
     }
 
     constructor(Bank bank, PriceOracle oracle) public {
@@ -115,27 +126,40 @@ contract Lens {
         return (banks,prods);
     }
 
-    function userPostionAll(address userAddr) public view returns(PositionInfo[] memory){
+    function userAll(address userAddr) public view returns(PositionInfo[] memory,DepositInfo[] memory){
 
         uint[] memory positions = bankContract.getUserPositions(userAddr);
         uint positionsCount = positions.length;
 
-        PositionInfo[] memory info = new PositionInfo[](positionsCount);
+        PositionInfo[] memory positionInfos = new PositionInfo[](positionsCount);
         for(uint i = 0; i < positionsCount; i++){
-            info[i] = userPostions(positions[i]);
+            positionInfos[i] = userPostions(positions[i]);
+        }
+        
+        address[] memory tokensAddr = bankContract.getBankTokens();
+        uint tokenCount = tokensAddr.length;
+        DepositInfo[] memory depositInfos = new DepositInfo[](tokenCount);
+        for(uint i = 0; i < tokenCount; i++){
+            depositInfos[i] = userDeposits(userAddr,tokensAddr[i]);
         }
 
-        return info;
+        return (positionInfos,depositInfos);
 
     }
 
     function userPostions( uint posId) internal view returns(PositionInfo memory){
 
-        uint256 liqBps = bankContract.config().getLiquidateBps();
+        
         (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
 
-        (uint256 lpAmount,uint256 lpValue,uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(prodId,posId,owner);
-        uint256 risk = calculateRisk(liqBps,debtValue,lpValue);
+        (,,,address goblin,,,) = bankContract.productions(prodId);
+        uint256 lpAmount = GoblinLensInterface(goblin).posLPAmount(posId);
+
+        (uint256 lpValue,uint256 token0Amount,uint256 token1Amount) = getUserLpInfo(goblin,lpAmount);
+
+        (uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(goblin,owner);
+
+        uint256 risk = calculateRisk(debtValue,lpValue);
 
         return PositionInfo({
             posId: posId,
@@ -144,11 +168,49 @@ contract Lens {
             healthAmount: healthAmount,
             lpAmount: lpAmount,
             lpValue: lpValue,
+            token0Amount:token0Amount,
+            token1Amount:token1Amount,
             risk: risk,
             mdxReward: mdxReward,
             hptReward: hptReward
         });
     }
+    function userDeposits(address userAddr, address bankToken) public view returns (DepositInfo memory){
+
+        (
+            address tokenAddr,
+            address nTokenAddr,
+             ,
+             ,
+             ,
+             ,
+             ,
+             ,
+             ,
+        ) = bankContract.banks(bankToken);
+
+        uint256 nTokenSupply;
+        uint256 tokenAmount;
+        uint256 value;
+
+        uint256 nAmount = ERC20(nTokenAddr).balanceOf(userAddr);
+
+        if(nAmount > 0){
+            nTokenSupply = ERC20(nTokenAddr).totalSupply();
+            tokenAmount = nAmount.mul(bankContract.totalToken(tokenAddr)).div(nTokenSupply);
+            value = tokenAmount.mul(getPriceInUsd(tokenAddr));
+        }
+        
+        return DepositInfo({
+            tokenAddr: tokenAddr,
+            nTokenAddr: nTokenAddr,
+            symbol: ERC20(bankToken).symbol(),
+            amount: nAmount,
+            value: value,
+            reward: uint(0)
+        });
+    }
+
     function bankTokenMetadata(address bankToken) public view returns (BankTokenMetadata memory) {
 
         (
@@ -215,6 +277,7 @@ contract Lens {
 
         return ProductionMetadata({
             lpToken: lpToken,
+            lpSymbol: ERC20(lpToken).symbol(),
             token0: GoblinLensInterface(goblin).token0(),
             token1: GoblinLensInterface(goblin).token1(),
             borrowToken: borrowToken,
@@ -241,33 +304,33 @@ contract Lens {
 
         uint256 mdxInUsd = getPriceInUsd(chefLens.mdx());
         uint256 hptInUsd = getPriceInUsd(chefLens.hpt());
-        uint256 poolValueLocked = getLpValue(lpToken,poolLpBalance);
+        (uint256 poolValueLocked,,) = getLpValue(lpToken,poolLpBalance);
         uint256 baseYield = 0;
         uint256 hptYield = 0;
         if( poolValueLocked > 0) {
             baseYield = mdxPerBlock * blocksPerYear * mdxInUsd / poolValueLocked;
             hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
         }
-
+  
         return (lpToken,poolValueLocked,baseYield,hptYield);
     }
 
-    function getUserRewardInfo(uint prodId, uint posId,address owner) internal view returns(uint,uint,uint,uint){
+    function getUserRewardInfo(address goblin,address owner) public view returns(uint,uint){
 
-        (,,,address goblin,,,) = bankContract.productions(prodId);
+        ChefLensInterface chefLens = ChefLensInterface(address(GoblinLensInterface(goblin).staking()));
+        uint256 mdxReward = chefLens.pendingMdx(GoblinLensInterface(goblin).stakingPid(),owner);
+        uint256 hptReward = chefLens.pendingHpt(GoblinLensInterface(goblin).stakingPid(),owner);
 
-        GoblinLensInterface goblinLens = GoblinLensInterface(goblin);
-        uint256 lpAmount = goblinLens.posLPAmount(posId);
-        uint256 lpValue = getLpValue(goblinLens.lpToken(),lpAmount);
+        return (mdxReward,hptReward);
+    }
+    function getUserLpInfo(address goblin,uint lpAmount ) public view returns(uint,uint,uint){
 
-        ChefLensInterface chefLens = ChefLensInterface(address(goblinLens.staking()));
-        uint256 mdxReward = chefLens.pendingMdx(goblinLens.stakingPid(),owner);
-        uint256 hptReward = chefLens.pendingHpt(goblinLens.stakingPid(),owner);
+        (uint256 lpValue,uint256 token0Amount,uint256 token1Amount) = getLpValue(GoblinLensInterface(goblin).lpToken(), lpAmount);
 
-        return (lpAmount,lpValue,mdxReward,hptReward);
+        return (lpValue,token0Amount,token1Amount);
     }
 
-    function getLpValue(address lpToken,uint256 lpBalance) internal view returns(uint256){
+    function getLpValue(address lpToken,uint256 lpBalance) internal view returns(uint256,uint256,uint256){
 
         IMdexPair pair = IMdexPair(lpToken);
         // 1. Get the position's LP balance and LP total supply.
@@ -282,14 +345,15 @@ contract Lens {
         uint256 userToken1 = lpBalance.mul(totalAmount1).div(lpSupply);
         uint256 priceToken1 = getPriceInUsd(pair.token1());
 
-        return userToken0.mul(priceToken0).add(userToken1.mul(priceToken1));
+        uint256 lpValue = userToken0.mul(priceToken0).add(userToken1.mul(priceToken1));
+        return (lpValue,userToken0,userToken1);
     }
 
-    function calculateRisk(uint256 liqBps,uint256 debtValue, uint256 lpValue) public pure returns(uint256){
+    function calculateRisk(uint256 debtValue, uint256 lpValue) public view returns(uint256){
 
         //借贷率 = 借款/总资产
         //风险值 = 借贷率/0.85
-
+        uint256 liqBps = bankContract.config().getLiquidateBps();
         uint256 loanRate = debtValue.div(lpValue);
         uint256 risk = loanRate.div(liqBps);
         return risk;
