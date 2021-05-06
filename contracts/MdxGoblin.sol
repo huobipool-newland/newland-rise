@@ -11,8 +11,9 @@ import "./interface/IMdexFactory.sol";
 import "./interface/IMdexRouter.sol";
 import "./interface/IMdexPair.sol";
 import "./interface/IStakingRewards.sol";
+import "./MdxExcessReward.sol";
 
-contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
+contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
     /// @notice Libraries
     using SafeToken for address;
     using SafeMath for uint256;
@@ -38,6 +39,8 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     mapping(address => bool) public okStrategies;
     uint256 public totalLPAmount;
     Strategy public liqStrategy;
+
+    mapping(address => address[]) swapPaths;
 
     constructor(
         address _operator,
@@ -169,13 +172,30 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         }
     }
 
+    function claimAndSwap(address toToken, address user, address to)
+    external
+    override
+    onlyOperator
+    nonReentrant
+    {
+        require(toToken == token0 || toToken == token1, "not in pair");
+        if (staking.getRewardToken() != toToken) {
+            uint swapAmt = staking.claim(stakingPid, toToken, user, address(this));
+            router.swapExactTokensForTokens(swapAmt, 0, swapPaths[toToken], to, now);
+        } else {
+            staking.claim(stakingPid, toToken, user, to);
+        }
+
+        staking.claimAll(stakingPid, user, to);
+    }
+
     function claim(address user, address to)
     external
     override
     onlyOperator
     nonReentrant
     {
-        staking.claim(stakingPid, user, to);
+        staking.claimAll(stakingPid, user, to);
     }
 
     /// @dev Liquidate the given position by converting it to debtToken and return back to caller.
@@ -236,14 +256,6 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
         }
     }
 
-    /// @dev Recover ERC20 tokens that were accidentally sent to this smart contract.
-    /// @param token The token contract. Can be anything. This contract should not hold ERC20 tokens.
-    /// @param to The address to send the tokens to.
-    /// @param value The number of tokens to transfer to `to`.
-    function recover(address token, address to, uint256 value) external onlyOwner nonReentrant {
-        token.safeTransfer(to, value);
-    }
-
     /// @dev Set the given strategies' approval status.
     /// @param strategies The strategy addresses.
     /// @param isOk Whether to approve or unapprove the given strategies.
@@ -259,6 +271,14 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin {
     /// @param _liqStrategy The new liquidate strategy contract.
     function setCriticalStrategies(Strategy _liqStrategy) external onlyOwner {
         liqStrategy = _liqStrategy;
+    }
+
+    function getSwapPath(address token) public view returns(address[] memory) {
+        return swapPaths[token];
+    }
+
+    function setSwapPath(address token, address[] memory path) public onlyOwner {
+        swapPaths[token] = path;
     }
 
 fallback() external {}

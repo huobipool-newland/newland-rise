@@ -16,7 +16,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
     event OpPosition(uint256 indexed id, uint256 debt, uint back);
     event Liquidate(uint256 indexed id, address indexed killer, uint256 prize, uint256 left);
-    event Claim(address user, address to);
 
     struct TokenBank {
         address tokenAddr;
@@ -39,6 +38,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         uint256 minDebt;
         uint256 openFactor;
         uint256 liquidateFactor;
+        uint group;
     }
 
     struct Position {
@@ -144,6 +144,19 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
     function opPosition(uint256 posId, uint256 pid, uint256 borrow, bytes calldata data)
     external payable onlyEOA nonReentrant {
+        _opPosition(posId, pid, borrow, data);
+    }
+
+    function reInvest(uint256 posId, uint256 pid, uint256 borrow, address toToken, bytes calldata data)external payable onlyEOA nonReentrant  {
+        Position storage pos = positions[posId];
+        require(msg.sender == pos.owner, "not position owner");
+        Production storage production = productions[pos.productionId];
+
+        Goblin(production.goblin).claimAndSwap(toToken, pos.owner, pos.owner);
+        _opPosition(posId, pid, borrow, data);
+    }
+
+    function _opPosition(uint256 posId, uint256 pid, uint256 borrow, bytes calldata data) internal {
         if (posId == 0) {
             posId = currentPos;
             currentPos ++;
@@ -240,11 +253,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
     function claim(uint256 posId) external payable onlyEOA nonReentrant {
         Position storage pos = positions[posId];
-        require(msg.sender == pos.owner, "only owner");
+        require(msg.sender == pos.owner, "not position owner");
         Production storage production = productions[pos.productionId];
 
         Goblin(production.goblin).claim(pos.owner, pos.owner);
-        emit Claim(pos.owner, pos.owner);
     }
 
     function _addDebt(Position storage pos, Production storage production, uint256 debtVal) internal {

@@ -64,6 +64,7 @@ contract SingleStaking is Ownable,IStakingRewards {
         uint256 indexed pid,
         uint256 amount
     );
+    event Claim(address token, address indexed user, address to, uint amount);
 
     constructor(
         IERC20 _giftToken,
@@ -80,6 +81,10 @@ contract SingleStaking is Ownable,IStakingRewards {
     modifier checkOp() {
         require(opInfoMap[msg.sender].enable);
         _;
+    }
+
+    function getRewardToken() external override returns(address) {
+        return address(giftToken);
     }
 
     function getPid(address stakeToken) public override returns(uint) {
@@ -268,12 +273,18 @@ contract SingleStaking is Ownable,IStakingRewards {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    function claim(uint _pid, address _user, address to) public override checkOp {
+    function claim(uint _pid, address token, address _user, address to) public override checkOp returns(uint) {
         PoolInfo storage pool = poolInfo[_pid];
-
         withdraw(_pid, 0, _user);
+        uint amount = pool.treasury.userTokenAmt(_user, address(token));
+        pool.treasury.withdraw(_user, address(token), amount, to);
+        emit Claim(token, _user, to, amount);
 
-        pool.treasury.withdraw(_user, address(giftToken), pool.treasury.userTokenAmt(_user, address(giftToken)), to);
+        return amount;
+    }
+
+    function claimAll(uint _pid, address _user, address to) public override checkOp {
+        claim(_pid, address(giftToken), _user, to);
     }
 
     function safeGiftTokenTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {

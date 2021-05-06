@@ -12,9 +12,9 @@ import "./interface/IWHT.sol";
 import "./interface/IMdexFactory.sol";
 import "./interface/IMdexRouter.sol";
 import "./interface/IMdexPair.sol";
-import "./interface/ISwapMining.sol";
+import "./MdxExcessReward.sol";
 
-contract MdxStrategyAddTwoSidesOptimal is Ownable, ReentrancyGuard, Strategy {
+contract MdxStrategyAddTwoSidesOptimal is Ownable, ReentrancyGuard, Strategy, MdxExcessReward {
     using SafeToken for address;
     using SafeMath for uint256;
 
@@ -206,29 +206,6 @@ contract MdxStrategyAddTwoSidesOptimal is Ownable, ReentrancyGuard, Strategy {
             (path[0], path[1]) = isReversed ? (tokenRelative, borrowToken) : (borrowToken, tokenRelative);
             router.swapExactTokensForTokens(swapAmt, 0, path, address(this), now);
         }
-    }
-
-    /// @param minter The address of MDex SwapMining contract.
-    /// @param pid pid of pair in SwapMining config.
-    function getSwapReward(address minter, uint256 pid) public view returns (uint256, uint256) {
-        ISwapMining swapMining = ISwapMining(minter);
-        return swapMining.getUserReward(pid);
-    }
-
-    /// @param minter The address of MDex SwapMining contract.
-    /// @param token Token of reward. Result of pairOfPid(lpTokenAddress)
-    function swapMiningReward(address minter, address token) external onlyOwner{
-        ISwapMining swapMining = ISwapMining(minter);
-        swapMining.takerWithdraw();
-        token.safeTransfer(msg.sender, token.myBalance());
-    }
-
-    /// @dev Recover ERC20 tokens that were accidentally sent to this smart contract.
-    /// @param token The token contract. Can be anything. This contract should not hold ERC20 tokens.
-    /// @param to The address to send the tokens to.
-    /// @param value The number of tokens to transfer to `to`.
-    function recover(address token, address to, uint256 value) external onlyOwner nonReentrant {
-        token.safeTransfer(to, value);
     }
 
 fallback() external {}

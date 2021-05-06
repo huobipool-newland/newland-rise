@@ -23,7 +23,7 @@ import "./Treasury.sol";
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
-contract MdexStaking is Ownable,IStakingRewards {
+contract MdexStakingChef is Ownable,IStakingRewards {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Info of each user.
@@ -83,6 +83,7 @@ contract MdexStaking is Ownable,IStakingRewards {
         uint256 indexed pid,
         uint256 amount
     );
+    event Claim(address token, address indexed user, address to, uint amount);
 
     constructor(
         IERC20 _hpt,
@@ -109,6 +110,10 @@ contract MdexStaking is Ownable,IStakingRewards {
     modifier checkOp() {
         require(opInfoMap[msg.sender].enable);
         _;
+    }
+
+    function getRewardToken() external override returns(address) {
+        return address(mdx);
     }
 
     function getPid(address lpToken) public override returns(uint) {
@@ -382,13 +387,19 @@ contract MdexStaking is Ownable,IStakingRewards {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    function claim(uint _pid, address _user, address to) public override checkOp {
+    function claim(uint _pid, address token, address _user, address to) public override checkOp returns(uint) {
         PoolInfo storage pool = poolInfo[_pid];
-
         withdraw(_pid, 0, _user);
+        uint amount = pool.treasury.userTokenAmt(_user, address(token));
+        pool.treasury.withdraw(_user, address(token), amount, to);
+        emit Claim(token, _user, to, amount);
 
-        pool.treasury.withdraw(_user, address(hpt), pool.treasury.userTokenAmt(_user, address(hpt)), to);
-        pool.treasury.withdraw(_user, address(mdx), pool.treasury.userTokenAmt(_user, address(mdx)), to);
+        return amount;
+    }
+
+    function claimAll(uint _pid, address _user, address to) public override checkOp {
+        claim(_pid, address(hpt), _user, to);
+        claim(_pid, address(mdx), _user, to);
     }
 
     function safeHptTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {
