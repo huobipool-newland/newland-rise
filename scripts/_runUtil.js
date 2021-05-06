@@ -9,7 +9,7 @@ async function deploy(name, ...args) {
     let getContractFactoryName = name
     let flPath = artifactPath + '/contracts/' + name + '_fl.sol'
     if (fs.existsSync(flPath) && fs.readdirSync(flPath).length > 0) {
-        getContractFactoryName = name + '_fl.sol/' + name
+        getContractFactoryName = 'contracts/' + name + '_fl.sol:' + name
         console.log(getContractFactoryName)
     }
     const Contract = await ethers.getContractFactory(getContractFactoryName);
