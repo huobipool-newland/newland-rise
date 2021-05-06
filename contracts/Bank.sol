@@ -323,7 +323,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     function opProduction(uint256 pid, bool isOpen, bool canBorrow, address borrowToken, address goblin,
-        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor) external onlyOwner {
+        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group) external onlyOwner {
 
         if(pid == 0){
             pid = currentPid;
@@ -342,6 +342,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         production.minDebt = minDebt;
         production.openFactor = openFactor;
         production.liquidateFactor = liquidateFactor;
+        production.group = group;
     }
 
     function calInterest(address token) public {
