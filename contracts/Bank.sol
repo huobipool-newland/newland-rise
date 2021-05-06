@@ -251,12 +251,18 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         emit Liquidate(posId, msg.sender, prize, left);
     }
 
-    function claim(uint256 posId) external payable onlyEOA nonReentrant {
+    function claim(uint256 posId) external onlyEOA nonReentrant {
         Position storage pos = positions[posId];
         require(msg.sender == pos.owner, "not position owner");
         Production storage production = productions[pos.productionId];
 
         Goblin(production.goblin).claim(pos.owner, pos.owner);
+    }
+
+    function claimAll(address[] memory goblins) external onlyEOA nonReentrant {
+        for(uint i = 0; i< goblins.length; i++) {
+            Goblin(goblins[i]).claim(msg.sender, msg.sender);
+        }
     }
 
     function _addDebt(Position storage pos, Production storage production, uint256 debtVal) internal {
