@@ -16,7 +16,7 @@ async function main() {
     let model = await $deploy('TripleSlopeModel')
     let config = await $deploy('BankConfig')
     let bank = await $deploy('Bank')
-    let chef = await $deploy('MdexMasterChef',
+    let chef = await $deploy('MdexStaking',
         '0xe499ef4616993730ced0f31fa2703b92b50bb536', //hpt
         '10000000000000000',//hptPerBlock
         0,//startBlock

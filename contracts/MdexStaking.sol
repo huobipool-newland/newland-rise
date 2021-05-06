@@ -23,7 +23,7 @@ import "./Treasury.sol";
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
-contract MdexMasterChef is Ownable,IStakingRewards {
+contract MdexStaking is Ownable,IStakingRewards {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Info of each user.
@@ -49,11 +49,6 @@ contract MdexMasterChef is Ownable,IStakingRewards {
         bool enable;
     }
     mapping(address => OpInfo) opInfoMap;
-
-    /**
-     * @notice The approximate number of blocks per year that is assumed by the interest rate model
-     */
-    uint public constant blocksPerYear = 10512000;
 
     // The HPT TOKEN!
     IERC20 public hpt;
