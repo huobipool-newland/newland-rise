@@ -70,6 +70,7 @@ contract Lens {
         address borrowToken;
         bool    isOpen;
         bool    canBorrow;
+        uint256 group;
 
         uint256 minDebt;   //最小借款额
         uint256 openFactor;   //最高开仓倍数
@@ -146,6 +147,8 @@ contract Lens {
         return (positionInfos,depositInfos);
 
     }
+
+    
 
     function userPostions( uint posId) internal view returns(PositionInfo memory){
 
@@ -266,6 +269,10 @@ contract Lens {
             uint256 minDebt,
             uint256 openFactor,
             uint256 liquidateFactor,
+<<<<<<< HEAD
+=======
+            uint256 group
+>>>>>>> add method:getAllUserPos
         ) = bankContract.productions(pid);
 
         (
@@ -283,6 +290,7 @@ contract Lens {
             borrowToken: borrowToken,
             isOpen: isOpen,
             canBorrow: canBorrow,
+            group: group,
             minDebt: minDebt,
             openFactor: openFactor,
             liquidateFactor: liquidateFactor,
@@ -366,6 +374,19 @@ contract Lens {
         }else{
             return uint(0);
         }
+
+    }
+
+    function getAllUserPos() public view returns(PositionInfo[] memory){
+
+        uint positionsCount = bankContract.currentPid()-1;
+
+        PositionInfo[] memory positionInfos = new PositionInfo[](positionsCount);
+        for(uint i = 0; i < positionsCount; i++){
+            positionInfos[i] = userPostions(i+1);
+        }
+
+        return positionInfos;
 
     }
 
