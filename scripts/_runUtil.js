@@ -1,11 +1,18 @@
 let dataPath = process.cwd() + '/scripts/_data.json'
 let fs = require('fs')
+let artifactPath = process.cwd() + '/artifacts'
 
 async function deploy(name, ...args) {
     const [deployer] = await ethers.getSigners();
     console.log(`------Deploying ${name} with the account:`, deployer.address);
 
-    const Contract = await ethers.getContractFactory(name);
+    let getContractFactoryName = name
+    let flPath = artifactPath + '/contracts/' + name + '_fl.sol'
+    if (fs.existsSync(flPath) && fs.readdirSync(flPath).length > 0) {
+        getContractFactoryName = name + '_fl.sol/' + name
+        console.log(getContractFactoryName)
+    }
+    const Contract = await ethers.getContractFactory(getContractFactoryName);
     let contract;
     let chainId = (await ethers.provider.getNetwork()).chainId
     if (chainId !== 666) {

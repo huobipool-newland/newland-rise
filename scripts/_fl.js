@@ -21,6 +21,11 @@ function wrapper(flPath) {
     let text = String(fs.readFileSync(flPath))
     text = text.replace(/\/\/ SPDX-License-Identifier: MIT/g, '')
     text = '// SPDX-License-Identifier: MIT\n' + text
+
+    if (text.match(/pragma experimental ABIEncoderV2;/)) {
+        text = text.replace(/pragma experimental ABIEncoderV2;/g, '')
+        text = 'pragma experimental ABIEncoderV2;\n' + text
+    }
     fs.writeFileSync(flPath, text)
 }
 
