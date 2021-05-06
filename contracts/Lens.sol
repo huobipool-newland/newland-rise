@@ -269,10 +269,7 @@ contract Lens {
             uint256 minDebt,
             uint256 openFactor,
             uint256 liquidateFactor,
-<<<<<<< HEAD
-=======
             uint256 group
->>>>>>> add method:getAllUserPos
         ) = bankContract.productions(pid);
 
         (
