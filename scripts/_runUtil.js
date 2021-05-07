@@ -71,9 +71,14 @@ async function getAddress(name, chainId) {
     }
 }
 
-async function getContract(name) {
-    const Contract = await ethers.getContractFactory(name);
-    return Contract.attach(await getAddress(name));
+async function getContract(name, chainId) {
+    let getContractFactoryName = name
+    let flPath = artifactPath + '/contracts/' + name + '_fl.sol'
+    if (fs.existsSync(flPath) && fs.readdirSync(flPath).length > 0) {
+        getContractFactoryName = 'contracts/' + name + '_fl.sol:' + name
+    }
+    const Contract = await ethers.getContractFactory(getContractFactoryName);
+    return Contract.attach(await getAddress(name, chainId));
 }
 
 global.$deploy = deploy
