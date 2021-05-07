@@ -44,6 +44,7 @@ contract Lens {
 
     Bank bankContract;
     PriceOracle  priceOracle;
+    uint public constant blocksPerYear = 10512000;
 
     struct BankTokenMetadata {
         address tokenAddr;
@@ -304,7 +305,6 @@ contract Lens {
         ChefLensInterface chefLens = ChefLensInterface(chef);
         uint256 hptPerBlock = chefLens.hptPerBlock();
         uint256 mdxPerBlock = chefLens.mdxRewardPerBlock(GoblinLensInterface(goblin).stakingPid());
-        uint256 blocksPerYear = chefLens.blocksPerYear();
         (address lpToken,,,,,uint256 poolLpBalance) = chefLens.poolInfo(GoblinLensInterface(goblin).stakingPid());
 
         uint256 mdxInUsd = getPriceInUsd(chefLens.mdx());
