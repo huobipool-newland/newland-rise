@@ -18,6 +18,8 @@ interface ChefLensInterface{
     function mdxRewardPerBlock(uint256 _pid) external view returns(uint256);
     function hptPerBlock() external view returns(uint256);
     function blocksPerYear() external view returns(uint256);
+    function hptRewardTotal() external view returns(uint256);
+    function mdxRewardTotal() external view returns(uint256);
     function mdx() external view returns(address);
     function hpt() external view returns(address);
 
@@ -80,6 +82,7 @@ contract Lens {
         uint256 baseYield; //基础收益率,单利
         uint256 hptYield;  //HPT补贴收益,单利
         uint256 poolValueLocked;  //挖矿池锁仓额
+        uint256 totalAccuRewards; //挖矿累计收益
     }
 
     struct PositionInfo {
@@ -276,9 +279,12 @@ contract Lens {
         (
             address lpToken,
             uint256 poolValueLocked,
+
             uint256 baseYield,
             uint256 hptYield
         ) = getPoolRewardInfo(goblin);
+
+        uint256 accuRewards = getTotalAccuRewards(goblin);
 
         return ProductionMetadata({
             lpToken: lpToken,
@@ -294,7 +300,8 @@ contract Lens {
             liquidateFactor: liquidateFactor,
             baseYield: baseYield,
             hptYield: hptYield,
-            poolValueLocked: poolValueLocked
+            poolValueLocked: poolValueLocked,
+            totalAccuRewards: accuRewards
         });
     }
 
@@ -310,6 +317,7 @@ contract Lens {
         uint256 mdxInUsd = getPriceInUsd(chefLens.mdx());
         uint256 hptInUsd = getPriceInUsd(chefLens.hpt());
         (uint256 poolValueLocked,,) = getLpValue(lpToken,poolLpBalance);
+
         uint256 baseYield = 0;
         uint256 hptYield = 0;
         if( poolValueLocked > 0) {
@@ -333,6 +341,24 @@ contract Lens {
         (uint256 lpValue,uint256 token0Amount,uint256 token1Amount) = getLpValue(GoblinLensInterface(goblin).lpToken(), lpAmount);
 
         return (lpValue,token0Amount,token1Amount);
+    }
+    function getTotalAccuRewards(address goblin) internal view returns(uint256){
+
+        address chef = GoblinLensInterface(goblin).staking();
+
+        ChefLensInterface chefLens = ChefLensInterface(chef);
+
+        address hpt = chefLens.hpt();
+        address mdx = chefLens.mdx();
+
+        uint256 hptRewardTotal = chefLens.hptRewardTotal();
+        uint256 mdxRewardTotal = chefLens.mdxRewardTotal();
+
+        uint256 totalAccuRewards = hptRewardTotal.mul(getPriceInUsd(hpt));
+        totalAccuRewards = totalAccuRewards.add(mdxRewardTotal.mul(getPriceInUsd(mdx)));
+
+        return totalAccuRewards;
+
     }
 
     function getLpValue(address lpToken,uint256 lpBalance) internal view returns(uint256,uint256,uint256){
