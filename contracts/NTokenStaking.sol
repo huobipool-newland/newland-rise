@@ -13,7 +13,7 @@ import "./library/TransferHelper.sol";
 import "./interface/IStakingRewards.sol";
 import "./Treasury.sol";
 
-contract SingleStaking is Ownable,IStakingRewards {
+contract NTokenStaking is Ownable,IStakingRewards {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Info of each user.
