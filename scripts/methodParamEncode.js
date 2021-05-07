@@ -5,10 +5,14 @@ let MdxStrategyAddTwoSidesOptimal_calldata_types = ['address', 'address', 'uint2
 let MdxStrategyWithdrawMinimizeTrading_calldata_types = ['address', 'address', 'uint']
 let MdxGoblin_calldata_types = ['address', 'bytes']
 
-let data = encode(MdxStrategyWithdrawMinimizeTrading_calldata_types,
-    '0xE1e9670D7AC114D145fdbc9D150c943ac8C1F828', '0xE1e9670D7AC114D145fdbc9D150c943ac8C1F828', 123)
+let data = encode(MdxStrategyAddTwoSidesOptimal_calldata_types,
+    '0x0298c2b32eaE4da002a15f36fdf7615BEa3DA047', '0xa71EdC38d189767582C38A3145b5873052c3e47a',"100000000","1000000000000000000",0 )
 console.log(data)
 console.log(decode(MdxStrategyWithdrawMinimizeTrading_calldata_types, data))
+
+let data2 = encode(MdxGoblin_calldata_types,
+    '0xc732ceE78bd5fb04C58aAB3fc5E3F54cC338b63B', data )
+console.log(data2)
 
 
 
