@@ -7,6 +7,7 @@
     "nd": "npx hardhat node",
     "ls": "npx hardhat run --network localhost",
     "hs": "npx hardhat run --network heco",
+    "hts": "npx hardhat run --network hecoTest",
     "fl": "node scripts/_fl.js"
   },
   "keywords": [],

@@ -34,6 +34,13 @@ module.exports = {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
       },
       allowUnlimitedContractSize: true
+    },
+    hecoTest: {
+      url: "https://http-testnet.hecochain.com",
+      accounts: {
+        mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
+      },
+      allowUnlimitedContractSize: true
     }
   }
 };
