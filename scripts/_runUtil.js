@@ -140,11 +140,9 @@ function wrapperContract(contract) {
     for (let key of Object.keys(contract)) {
         if (typeof contract[key] === "function") {
             let origin = contract[key]
-            if (key === 'setPriceFeed') {
-                contract["$" + key] = async (...args) => {
-                    console.log(`#${key} ${args}`)
-                    return await origin(...args);
-                }
+            contract["$" + key] = async (...args) => {
+                console.log(`#${key} ${args}`)
+                return await origin(...args);
             }
         }
     }
