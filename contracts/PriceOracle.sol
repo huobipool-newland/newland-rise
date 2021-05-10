@@ -17,9 +17,11 @@ contract PriceOracle is Ownable{
         dataInfoMap[token].priceFeed = priceFeed;
     }
 
-    function setPriceWrapper(address token, int price) public onlyOwner {
-        dataInfoMap[token].price = price;
-        dataInfoMap[token].timeStamp = block.timestamp;
+    function setPriceWrapper(address[] memory tokens, int[] memory prices) public onlyOwner {
+        for(uint i = 0; i < tokens.length; i++) {
+            dataInfoMap[tokens[i]].price = prices[i];
+            dataInfoMap[tokens[i]].timeStamp = block.timestamp;
+        }
     }
 
     /**
