@@ -21,8 +21,10 @@ require("./_runUtil");
 
     let priceOracle = await $deploy("PriceOracle")
 
-    await priceOracle.$setPriceFeed(USDT, USDT_USD);
-    await priceOracle.$setPriceFeed(HUSD, HUSD_USD);
-    await priceOracle.$setPriceFeed(WHT, WHT_USD);
-    await priceOracle.$setPriceFeed(MDX, MDX_USD);
+    // await priceOracle.$setPriceFeed(USDT, USDT_USD);
+    // await priceOracle.$setPriceFeed(HUSD, HUSD_USD);
+    // await priceOracle.$setPriceFeed(WHT, WHT_USD);
+    // await priceOracle.$setPriceFeed(MDX, MDX_USD);
+    // await priceOracle.$setOps('e38d716995cb7f181f29258aa392dc3665d418e4', true)
+    console.log(await priceOracle.$getOpRecords())
 })()

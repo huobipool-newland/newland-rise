@@ -21,7 +21,7 @@ contract AccessSetting is Ownable {
     }
 
     modifier onlyOps() {
-        require(opInfoMap[msg.sender].enable);
+        require(opInfoMap[msg.sender].enable, 'not operator');
         _;
     }
 
