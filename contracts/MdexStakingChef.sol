@@ -15,6 +15,7 @@ import "./interface/IMdexChef.sol";
 import "./library/TransferHelper.sol";
 import "./interface/IStakingRewards.sol";
 import "./Treasury.sol";
+import "./AccessSetting.sol";
 
 // MasterChef is the master of Hpt. He can make Hpt and he is a fair guy.
 //
@@ -23,7 +24,7 @@ import "./Treasury.sol";
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
-contract MdexStakingChef is Ownable,IStakingRewards {
+contract MdexStakingChef is AccessSetting, IStakingRewards {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Info of each user.
@@ -43,12 +44,6 @@ contract MdexStakingChef is Ownable,IStakingRewards {
         uint256 accMdxPerShare;
         Treasury treasury;
     }
-
-    struct OpInfo {
-        address op;
-        bool enable;
-    }
-    mapping(address => OpInfo) opInfoMap;
 
     // The HPT TOKEN!
     IERC20 public hpt;
@@ -107,11 +102,6 @@ contract MdexStakingChef is Ownable,IStakingRewards {
         treasuryAddress = _treasuryAddress;
     }
 
-    modifier checkOp() {
-        require(opInfoMap[msg.sender].enable);
-        _;
-    }
-
     function getRewardToken() external override returns(address) {
         return address(mdx);
     }
@@ -121,13 +111,6 @@ contract MdexStakingChef is Ownable,IStakingRewards {
             return poolLenMap[lpToken] - 1;
         }
         return uint(-1);
-    }
-
-    function setOps(address op, bool enable) public onlyOwner {
-        if (opInfoMap[op].op == address(0)) {
-            opInfoMap[op].op = op;
-        }
-        opInfoMap[op].enable = enable;
     }
 
     function setTreasuryAddress(address _treasuryAddress) public onlyOwner {
@@ -321,7 +304,7 @@ contract MdexStakingChef is Ownable,IStakingRewards {
     }
 
     // Deposit LP tokens to MasterChef for HPT allocation.
-    function deposit(uint256 _pid, uint256 _amount, address _user) public override checkOp {
+    function deposit(uint256 _pid, uint256 _amount, address _user) public override onlyOps {
         PoolInfo storage pool = poolInfo[_pid];
         updatePool(_pid);
 
@@ -354,7 +337,7 @@ contract MdexStakingChef is Ownable,IStakingRewards {
     }
 
     // Withdraw LP tokens from MasterChef.
-    function withdraw(uint256 _pid, uint256 _amount, address _user) public override checkOp {
+    function withdraw(uint256 _pid, uint256 _amount, address _user) public override onlyOps {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         require(user.amount >= _amount, "withdraw: not good");
@@ -387,7 +370,7 @@ contract MdexStakingChef is Ownable,IStakingRewards {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    function claim(uint _pid, address token, address _user, address to) public override checkOp returns(uint) {
+    function claim(uint _pid, address token, address _user, address to) public override onlyOps returns(uint) {
         PoolInfo storage pool = poolInfo[_pid];
         withdraw(_pid, 0, _user);
         uint amount = pool.treasury.userTokenAmt(_user, address(token));
@@ -397,7 +380,7 @@ contract MdexStakingChef is Ownable,IStakingRewards {
         return amount;
     }
 
-    function claimAll(uint _pid, address _user, address to) public override checkOp {
+    function claimAll(uint _pid, address _user, address to) public override onlyOps {
         claim(_pid, address(hpt), _user, to);
         claim(_pid, address(mdx), _user, to);
     }
