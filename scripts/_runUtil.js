@@ -45,6 +45,7 @@ async function deploy(name, ...args) {
         console.log("Deploy Contract address:", contract.address);
     }
 
+    wrapperContract(contract)
     return contract
 }
 
@@ -80,7 +81,10 @@ async function getContract(name, chainId) {
         getContractFactoryName = 'contracts/' + name + '_fl.sol:' + name
     }
     const Contract = await ethers.getContractFactory(getContractFactoryName);
-    return Contract.attach(await getAddress(name, chainId));
+
+    let contract = Contract.attach(await getAddress(name, chainId));
+    wrapperContract(contract);
+    return contract;
 }
 
 async function getDeployInitData(address, chainId) {
@@ -130,6 +134,20 @@ function isBaseType(type) {
         }
     }
     return false
+}
+
+function wrapperContract(contract) {
+    for (let key of Object.keys(contract)) {
+        if (typeof contract[key] === "function") {
+            let origin = contract[key]
+            if (key === 'setPriceFeed') {
+                contract["$" + key] = async (...args) => {
+                    console.log(`#${key} ${args}`)
+                    return await origin(...args);
+                }
+            }
+        }
+    }
 }
 
 global.$deploy = deploy

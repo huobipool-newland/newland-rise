@@ -31,7 +31,7 @@ async function main() {
     // HUSD 0x0298c2b32eaE4da002a15f36fdf7615BEa3DA047
     // USDT 0xa71EdC38d189767582C38A3145b5873052c3e47a
     if (chef.$isNew) {
-        await chef.add(
+        await chef.$add(
             1,//allocPoint,
             '0xdff86B408284dff30A7CAD7688fEdB465734501C',//lpToken,
             10//mdxChefPid
@@ -57,25 +57,25 @@ async function main() {
     )
 
     if (goblin.$isNew) {
-        await goblin.setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
+        await goblin.$setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
     }
     if (config.$isNew) {
-        await config.setParams(1, 1, model.address);
+        await config.$setParams(1, 1, model.address);
     }
     if (bank.$isNew) {
-        await bank.updateConfig(config.address);
-        await bank.addToken(USDT, 'nUSDT');
-        await bank.addToken(HUSD, 'nHUSD');
-        await bank.opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0);
-        await bank.opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0);
+        await bank.$updateConfig(config.address);
+        await bank.$addToken(USDT, 'nUSDT');
+        await bank.$addToken(HUSD, 'nHUSD');
+        await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0);
+        await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0);
     }
 
     let priceOracle = await $deploy("PriceOracle")
     if (priceOracle.$isNew) {
-        await priceOracle.setPriceFeed(USDT, USDT_USD);
-        await priceOracle.setPriceFeed(HUSD, HUSD_USD);
-        await priceOracle.setPriceFeed(WHT, WHT_USD);
-        await priceOracle.setPriceFeed(MDX, MDX_USD);
+        await priceOracle.$setPriceFeed(USDT, USDT_USD);
+        await priceOracle.$setPriceFeed(HUSD, HUSD_USD);
+        await priceOracle.$setPriceFeed(WHT, WHT_USD);
+        await priceOracle.$setPriceFeed(MDX, MDX_USD);
     }
 
     await $deploy('Lens', bank.address, priceOracle.address);
