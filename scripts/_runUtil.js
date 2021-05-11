@@ -17,35 +17,29 @@ async function deploy(name, ...args) {
     const Contract = await ethers.getContractFactory(getContractFactoryName);
     let contract;
     let chainId = (await ethers.provider.getNetwork()).chainId
-    if (chainId !== 666) {
-        if (!fs.existsSync(dataPath)) {
-            fs.writeFileSync(dataPath, JSON.stringify({}, null, 2))
-        }
-        let data = JSON.parse(String(fs.readFileSync(dataPath)))
+    if (!fs.existsSync(dataPath)) {
+        fs.writeFileSync(dataPath, JSON.stringify({}, null, 2))
+    }
+    let data = JSON.parse(String(fs.readFileSync(dataPath)))
 
-        if (!data[chainId]) {
-            data[chainId] = {}
-        }
-        let key = name+ '/' +args.join(',')
-        let chainData = data[chainId]
-        let address = chainData[key]
-        if (address) {
-            contract = Contract.attach(address);
-            console.log("Exist Contract address:", contract.address);
-        } else {
-            contract = await Contract.deploy(...args)
-            contract.$isNew = true
-            console.log("Deploy Contract address:", contract.address);
-            chainData[key] = contract.address;
-            fs.writeFileSync(dataPath, JSON.stringify(data, null, 2))
-        }
+    if (!data[chainId]) {
+        data[chainId] = {}
+    }
+    let key = name+ '/' +args.join(',')
+    let chainData = data[chainId]
+    let address = chainData[key]
+    if (address) {
+        contract = Contract.attach(address);
+        console.log("Exist Contract address:", contract.address);
     } else {
         contract = await Contract.deploy(...args)
         contract.$isNew = true
         console.log("Deploy Contract address:", contract.address);
+        chainData[key] = contract.address;
+        fs.writeFileSync(dataPath, JSON.stringify(data, null, 2))
     }
 
-    wrapperContract(contract)
+    wrapperContract(name, contract)
     return contract
 }
 
@@ -53,10 +47,6 @@ async function getAddress(name, chainId) {
     if (chainId !== 0 && !chainId) {
         chainId = (await ethers.provider.getNetwork()).chainId
     }
-    if (chainId === 666) {
-        return null
-    }
-
     if (!fs.existsSync(dataPath)) {
         return null
     }
@@ -83,16 +73,13 @@ async function getContract(name, chainId) {
     const Contract = await ethers.getContractFactory(getContractFactoryName);
 
     let contract = Contract.attach(await getAddress(name, chainId));
-    wrapperContract(contract);
+    wrapperContract(name, contract);
     return contract;
 }
 
 async function getDeployInitData(address, chainId) {
     if (chainId !== 0 && !chainId) {
         chainId = (await ethers.provider.getNetwork()).chainId
-    }
-    if (chainId === 666) {
-        return null
     }
     let data = JSON.parse(String(fs.readFileSync(dataPath)))[chainId]
     if (!data) {
@@ -136,12 +123,12 @@ function isBaseType(type) {
     return false
 }
 
-function wrapperContract(contract) {
+function wrapperContract(name, contract) {
     for (let key of Object.keys(contract)) {
         if (typeof contract[key] === "function") {
             let origin = contract[key]
             contract["$" + key] = async (...args) => {
-                console.log(`#${key} ${args}`)
+                console.log(`#${name}.${key} ${args}`)
                 return await origin(...args);
             }
         }
