@@ -58,6 +58,7 @@ async function main() {
 
     if (goblin.$isNew) {
         await goblin.$setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
+        await chef.$setOps(goblin.address, true)
     }
     if (config.$isNew) {
         await config.$setParams(1, 1, model.address);
