@@ -147,7 +147,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         _opPosition(posId, pid, borrow, data);
     }
 
-    function reInvest(uint256 claimPosId, uint256 posId, uint256 pid, uint256 borrow, address toToken, bytes calldata data)external payable onlyEOA nonReentrant  {
+    function reInvest(uint256 claimPosId, address toToken, uint256 posId, uint256 pid, uint256 borrow, bytes calldata data)external payable onlyEOA nonReentrant  {
         Position storage pos = positions[claimPosId];
         require(msg.sender == pos.owner, "not position owner");
         Production storage production = productions[pos.productionId];
