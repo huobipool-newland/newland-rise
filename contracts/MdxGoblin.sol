@@ -178,7 +178,6 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
     onlyOperator
     nonReentrant
     {
-        require(toToken == token0 || toToken == token1, "not in pair");
         if (staking.getRewardToken() != toToken) {
             uint swapAmt = staking.claim(stakingPid, toToken, user, address(this));
             router.swapExactTokensForTokens(swapAmt, 0, swapPaths[toToken], to, now);

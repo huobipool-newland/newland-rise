@@ -147,8 +147,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         _opPosition(posId, pid, borrow, data);
     }
 
-    function reInvest(uint256 posId, uint256 pid, uint256 borrow, address toToken, bytes calldata data)external payable onlyEOA nonReentrant  {
-        Position storage pos = positions[posId];
+    function reInvest(uint256 claimPosId, uint256 posId, uint256 pid, uint256 borrow, address toToken, bytes calldata data)external payable onlyEOA nonReentrant  {
+        Position storage pos = positions[claimPosId];
         require(msg.sender == pos.owner, "not position owner");
         Production storage production = productions[pos.productionId];
 
@@ -259,9 +259,17 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         Goblin(production.goblin).claim(pos.owner, pos.owner);
     }
 
-    function claimAll(address[] memory goblins) external onlyEOA nonReentrant {
+    function claimWithGoblins(address[] memory goblins) external onlyEOA nonReentrant {
         for(uint i = 0; i< goblins.length; i++) {
             Goblin(goblins[i]).claim(msg.sender, msg.sender);
+        }
+    }
+
+    function claimAll() external onlyEOA nonReentrant {
+        uint[] memory ps = userPositions[msg.sender];
+        for(uint i = 0; i< ps.length; i++) {
+            address goblin = productions[positions[i].productionId].goblin;
+            Goblin(goblin).claim(msg.sender, msg.sender);
         }
     }
 
