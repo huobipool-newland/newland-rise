@@ -5,7 +5,7 @@ import "./NToken.sol";
 
 contract NTokenFactory {
 
-    function genNToken(string memory _symbol) public returns(address) {
+    function genNToken(string memory _symbol) internal returns(address) {
         return address(new NToken(_symbol));
     }
 }
