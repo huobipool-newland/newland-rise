@@ -13,6 +13,14 @@ let WHT_USD = '0x8EC213E7191488C7873cEC6daC8e97cdbAdb7B35'
 
 
 async function main() {
+    let priceOracle = await $deploy("PriceOracle")
+    if (priceOracle.$isNew) {
+        await priceOracle.$setPriceFeed(USDT, USDT_USD);
+        await priceOracle.$setPriceFeed(HUSD, HUSD_USD);
+        await priceOracle.$setPriceFeed(WHT, WHT_USD);
+        await priceOracle.$setPriceFeed(MDX, MDX_USD);
+    }
+
     let model = await $deploy('TripleSlopeModel')
     let config = await $deploy('BankConfig')
     let bank = await $deploy('Bank')
@@ -46,7 +54,8 @@ async function main() {
         MDX_ROUTER,//router,
         USDT,//token0,
         HUSD,//token1,
-        liqStrategy.address//liqStrategy
+        liqStrategy.address,//liqStrategy
+        priceOracle.address
     )
     let mdxAddStrategy = await $deploy('MdxStrategyAddTwoSidesOptimal',
         MDX_ROUTER,
@@ -67,16 +76,8 @@ async function main() {
         await bank.$updateConfig(config.address);
         await bank.$addToken(USDT, 'nUSDT');
         await bank.$addToken(HUSD, 'nHUSD');
-        await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0);
-        await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0);
-    }
-
-    let priceOracle = await $deploy("PriceOracle")
-    if (priceOracle.$isNew) {
-        await priceOracle.$setPriceFeed(USDT, USDT_USD);
-        await priceOracle.$setPriceFeed(HUSD, HUSD_USD);
-        await priceOracle.$setPriceFeed(WHT, WHT_USD);
-        await priceOracle.$setPriceFeed(MDX, MDX_USD);
+        await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
+        await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, false);
     }
 
     await $deploy('Lens', bank.address, priceOracle.address);
