@@ -31,7 +31,7 @@ async function main() {
         '0xb0b670fc1f7724119963018db0bfa86adb22d941',//factory
         '0x5545153ccfca01fbd7dd11c0b23ba694d9509a6f',//WHT
         '0xFB03e11D93632D97a8981158A632Dd5986F5E909',//mdxChef
-        '1000000000000000000',//mdxProfitRate
+        '0',//mdxProfitRate
         '0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c',//mdx
         '0x2f1178bd9596ab649014441dDB83c2f240B5527C'//treasuryAddress
     )
