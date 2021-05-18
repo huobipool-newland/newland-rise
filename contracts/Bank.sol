@@ -39,6 +39,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         uint256 openFactor;
         uint256 liquidateFactor;
         uint group;
+        bool liqUseOracle;
     }
 
     struct Position {
@@ -225,7 +226,12 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         uint256 debt = _removeDebt(pos, production);
 
         uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
-        require(health.mul(production.liquidateFactor) < debt.mul(10000), "can't liquidate");
+        require(health.mul(production.liquidateFactor) < debt.mul(10000), "health: can't liquidate");
+
+        if (production.liqUseOracle) {
+            uint256 healthOracle = Goblin(production.goblin).healthOracle(posId, production.borrowToken);
+            require(healthOracle.mul(production.liquidateFactor) < debt.mul(10000), "healthOracle: can't liquidate");
+        }
 
         bool isHT = production.borrowToken == address(0);
         uint256 before = isHT? address(this).balance: SafeToken.myBalance(production.borrowToken);
@@ -337,7 +343,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     function opProduction(uint256 pid, bool isOpen, bool canBorrow, address borrowToken, address goblin,
-        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group) external onlyOwner {
+        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group, bool liqUseOracle) external onlyOwner {
 
         if(pid == 0){
             pid = currentPid;
@@ -357,6 +363,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         production.openFactor = openFactor;
         production.liquidateFactor = liquidateFactor;
         production.group = group;
+        production.liqUseOracle = liqUseOracle;
     }
 
     function calInterest(address token) public {

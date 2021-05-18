@@ -3,6 +3,9 @@ let fs = require('fs')
 let artifactPath = process.cwd() + '/artifacts'
 let Web3 = require('web3');
 let web3 = global.web3 || new Web3('http://localhost:8545')
+let MdxStrategyAddTwoSidesOptimal_calldata_types = ['address', 'address', 'uint256', 'uint256', 'uint256']
+let MdxStrategyWithdrawMinimizeTrading_calldata_types = ['address', 'address', 'uint']
+let MdxGoblin_calldata_types = ['address', 'bytes']
 
 async function deploy(name, ...args) {
     const [deployer] = await ethers.getSigners();
@@ -39,7 +42,7 @@ async function deploy(name, ...args) {
         fs.writeFileSync(dataPath, JSON.stringify(data, null, 2))
     }
 
-    wrapperContract(name, contract)
+    loggerObj(name, contract)
     return contract
 }
 
@@ -73,7 +76,8 @@ async function getContract(name, chainId) {
     const Contract = await ethers.getContractFactory(getContractFactoryName);
 
     let contract = Contract.attach(await getAddress(name, chainId));
-    wrapperContract(name, contract);
+    loggerObj(name, contract);
+    contract.$connect = signer => loggerObj(name, contract.connect(signer));
     return contract;
 }
 
@@ -123,19 +127,55 @@ function isBaseType(type) {
     return false
 }
 
-function wrapperContract(name, contract) {
-    for (let key of Object.keys(contract)) {
-        if (typeof contract[key] === "function") {
-            let origin = contract[key]
-            contract["$" + key] = async (...args) => {
-                console.log(`#${name}.${key} ${args}`)
+function loggerObj(name, obj) {
+    for (let key of Object.keys(obj)) {
+        if (typeof obj[key] === "function") {
+            let origin = obj[key]
+            obj["$" + key] = async (...args) => {
+                console.log(`#${name}.${key} ${args}`);
                 return await origin(...args);
             }
         }
     }
+    return obj
 }
+
+function encodeParams(types, ...args) {
+    return web3.eth.abi.encodeParameters(types, args)
+}
+
+function decodeParams(types, data) {
+    return web3.eth.abi.decodeParameters(types, data)
+}
+
+function opDataDecode(data) {
+    let goblinData = decodeParams(MdxGoblin_calldata_types, data)
+    console.log(data)
+}
+
+function opAddData(addStrategyAddress, token0Address, token1Address, token0Amount, token1Amount) {
+    let data = encodeParams(MdxStrategyAddTwoSidesOptimal_calldata_types,
+        token0Address, token1Address,token0Amount,token1Amount,0)
+    return encodeParams(MdxGoblin_calldata_types,
+        addStrategyAddress, data )
+}
+
+function opRemoveData(removeSrategyAddress, token0Address, token1Address, whichWantBack) {
+    let data = encodeParams(MdxStrategyWithdrawMinimizeTrading_calldata_types,
+        token0Address, token1Address, whichWantBack)
+    return encodeParams(MdxGoblin_calldata_types,
+        removeSrategyAddress, data )
+}
+
 
 global.$deploy = deploy
 global.$getAddress = getAddress
 global.$getContract = getContract
 global.$getDeployInitData = getDeployInitData
+global.$opAddData = opAddData
+global.$opRemoveData = opRemoveData
+global.$opDataDecode = opDataDecode
+global.$encodeParams = encodeParams
+global.$decodeParams = decodeParams
+
+

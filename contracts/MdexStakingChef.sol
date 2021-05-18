@@ -244,12 +244,14 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 mdxReward;
             (mdxReward,) = mdxChef.pending(pool.mdxChefPid, address(this));
+            uint256 mdxProfit = mdxReward.mul(mdxProfitRate).div(one);
+            mdxReward = mdxReward.sub(mdxProfit);
             accMdxPerShare = accMdxPerShare.add(
                 mdxReward.mul(1e12).div(lpSupply)
             );
         }
         return user.amount.mul(accMdxPerShare).div(1e12).sub(user.mdxRewardDebt) +
-        pool.treasury.userTokenAmt(_user, address(hpt));
+        pool.treasury.userTokenAmt(_user, address(mdx));
     }
 
     // Update reward vairables for all pools. Be careful of gas spending!

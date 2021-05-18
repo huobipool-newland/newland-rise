@@ -12,6 +12,7 @@ import "./interface/IMdexRouter.sol";
 import "./interface/IMdexPair.sol";
 import "./interface/IStakingRewards.sol";
 import "./MdxExcessReward.sol";
+import "./interface/IPriceOracle.sol";
 
 contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
     /// @notice Libraries
@@ -39,6 +40,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
     mapping(address => bool) public okStrategies;
     uint256 public totalLPAmount;
     Strategy public liqStrategy;
+    IPriceOracle oracle;
 
     mapping(address => address[]) swapPaths;
 
@@ -48,7 +50,8 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
         IMdexRouter _router,
         address _token0,
         address _token1,
-        Strategy _liqStrategy
+        Strategy _liqStrategy,
+        IPriceOracle _oracle
     ) public {
         operator = _operator;
         wht = _router.WHT();
@@ -70,6 +73,8 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
 
         // 100% trust in the staking pool
         lpToken.approve(address(_staking), uint256(-1));
+
+        oracle = _oracle;
     }
 
     /// @dev Require that the caller must be the operator (the bank).
@@ -169,6 +174,42 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
             return getMktSellAmount(
                 userToken0, totalAmount0.sub(userToken0), totalAmount1.sub(userToken1)
             ).add(userToken1);
+        }
+    }
+
+    /// @dev Return the amount of debt token to receive if we are to liquidate the given position.
+    /// @param id The position ID to perform health check.
+    /// @param borrowToken The token this position had debt.
+    function healthOracle(uint256 id, address borrowToken) external override view returns (uint256) {
+        bool isDebtHt = borrowToken == address(0);
+        require(borrowToken == token0 || borrowToken == token1 || isDebtHt, "borrowToken not token0 and token1");
+
+        // 1. Get the position's LP balance and LP total supply.
+        uint256 lpBalance = posLPAmount[id];
+        uint256 lpSupply = lpToken.totalSupply();
+        // Ignore pending mintFee as it is insignificant
+        // 2. Get the pool's total supply of token0 and token1.
+        (uint256 totalAmount0, uint256 totalAmount1,) = lpToken.getReserves();
+
+        // 3. Convert the position's LP tokens to the underlying assets.
+        uint256 userToken0 = lpBalance.mul(totalAmount0).div(lpSupply);
+        uint256 userToken1 = lpBalance.mul(totalAmount1).div(lpSupply);
+
+        if (isDebtHt) {
+            borrowToken = token0 == wht ? token0 : token1;
+        }
+
+        (int token0Price,) = oracle.getPrice(token0);
+        (int token1Price,) = oracle.getPrice(token1);
+        require(token0Price > 0, 'oracle token0Price invalid');
+        require(token1Price > 0, 'oracle token1Price invalid');
+        uint totalAmt = userToken0.mul(uint(token0Price)) + userToken1.mul(uint(token1Price));
+
+        // 4. Convert all farming tokens to debtToken and return total amount.
+        if (borrowToken == token0) {
+            return totalAmt.div(uint(token0Price));
+        } else {
+            return totalAmt.div(uint(token1Price));
         }
     }
 

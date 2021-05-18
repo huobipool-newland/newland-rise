@@ -171,7 +171,7 @@ contract Lens {
 
         (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
 
-        (,,,address goblin,,,,) = bankContract.productions(prodId);
+        (,,,address goblin,,,,,) = bankContract.productions(prodId);
         uint256 lpAmount = GoblinLensInterface(goblin).posLPAmount(posId);
 
         (uint256 lpValue,uint256 token0Amount,uint256 token1Amount) = getUserLpInfo(goblin, lpAmount);
@@ -286,7 +286,7 @@ contract Lens {
         uint256 minDebt,
         uint256 openFactor,
         uint256 liquidateFactor,
-        uint256 group
+        uint256 group,
         ) = bankContract.productions(pid);
 
         (
@@ -434,8 +434,8 @@ contract Lens {
 
         uint[] memory positionInfos = new uint[](positionsCount);
         for (uint i = 0; i < positionsCount; i++) {
-            PositionInfo info = userPostions(i + 1);
-            (,,,,,,uint256 liquidateFactor,) = bankContract.productions(info.prodId);
+            PositionInfo memory info = userPostions(i + 1);
+            (,,,,,,uint256 liquidateFactor,,) = bankContract.productions(info.prodId);
 
             if (info.healthAmount.mul(liquidateFactor) < info.debtValue.mul(10000)) {
                 positionInfos[i] = info.prodId;
