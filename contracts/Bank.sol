@@ -274,7 +274,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     function claimAll() external onlyEOA nonReentrant {
         uint[] memory ps = userPositions[msg.sender];
         for(uint i = 0; i< ps.length; i++) {
-            address goblin = productions[positions[i].productionId].goblin;
+            address goblin = productions[positions[ps[i]].productionId].goblin;
             Goblin(goblin).claim(msg.sender, msg.sender);
         }
     }
