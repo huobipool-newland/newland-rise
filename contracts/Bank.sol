@@ -39,7 +39,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         uint256 openFactor;
         uint256 liquidateFactor;
         uint group;
-        bool liqUseOracle;
+        uint liqVerify;
     }
 
     struct Position {
@@ -225,10 +225,12 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
         uint256 debt = _removeDebt(pos, production);
 
-        uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
-        require(health.mul(production.liquidateFactor) < debt.mul(10000), "health: can't liquidate");
+        if (production.liqVerify == 0 || production.liqVerify == 2) {
+            uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
+            require(health.mul(production.liquidateFactor) < debt.mul(10000), "health: can't liquidate");
+        }
 
-        if (production.liqUseOracle) {
+        if (production.liqVerify == 1 || production.liqVerify == 2) {
             uint256 healthOracle = Goblin(production.goblin).healthOracle(posId, production.borrowToken);
             require(healthOracle.mul(production.liquidateFactor) < debt.mul(10000), "healthOracle: can't liquidate");
         }
@@ -343,7 +345,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     function opProduction(uint256 pid, bool isOpen, bool canBorrow, address borrowToken, address goblin,
-        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group, bool liqUseOracle) external onlyOwner {
+        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group, uint liqVerify) external onlyOwner {
 
         if(pid == 0){
             pid = currentPid;
@@ -363,7 +365,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         production.openFactor = openFactor;
         production.liquidateFactor = liquidateFactor;
         production.group = group;
-        production.liqUseOracle = liqUseOracle;
+        production.liqVerify = liqVerify;
     }
 
     function calInterest(address token) public {

@@ -76,8 +76,8 @@ async function main() {
         await bank.$updateConfig(config.address);
         await bank.$addToken(USDT, 'nUSDT');
         await bank.$addToken(HUSD, 'nHUSD');
-        await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
-        await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, false);
+        await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, 0);
+        await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, 0);
     }
 
     await $deploy('Lens', bank.address, priceOracle.address);
