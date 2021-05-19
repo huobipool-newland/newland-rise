@@ -224,7 +224,12 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
             _addDebt(positions[posId], production, debt);
         }
+        repayLoanPlat(production);
+        emit OpPosition(posId, debt, backToken);
+    }
 
+    function repayLoanPlat(Production memory production) internal {
+        bool isBorrowHt = production.borrowToken == address(0);
         if (!isBorrowHt) {
             TokenBank storage borrowBank = banks[production.borrowToken];
             uint256 total = totalToken(production.borrowToken);
@@ -233,7 +238,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
             loanPlat.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
         }
-        emit OpPosition(posId, debt, backToken);
     }
 
     function liquidate(uint256 posId) external payable onlyEOA nonReentrant {
@@ -272,6 +276,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         } else {
             banks[production.borrowToken].totalVal = banks[production.borrowToken].totalVal.sub(debt).add(rest);
         }
+        repayLoanPlat(production);
         emit Liquidate(posId, msg.sender, prize, left);
     }
 
