@@ -20,13 +20,14 @@ contract NTokenStaking is Ownable,IStakingRewards {
     struct UserInfo {
         uint256 amount; // How many Stake tokens the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
+        uint256 giftRewarded;
     }
     // Info of each pool.
     struct PoolInfo {
-        IERC20 stakeToken; // Address of Stake token contract.
+        IERC20 stake; // Address of Stake token contract.
         uint256 allocPoint; // How many allocation points assigned to this pool. HPTs to distribute per block.
         uint256 lastRewardBlock; // Last block number that HPTs distribution occurs.
-        uint256 accGiftTokenPerShare; // Accumulated HPTs per share, times 1e12. See below.
+        uint256 accGiftPerShare; // Accumulated HPTs per share, times 1e12. See below.
         uint256 stakeBalance;
         Treasury treasury;
     }
@@ -38,9 +39,9 @@ contract NTokenStaking is Ownable,IStakingRewards {
     mapping(address => OpInfo) opInfoMap;
 
     // The HPT TOKEN!
-    IERC20 public giftToken;
+    IERC20 public gift;
     // HPT tokens created per block.
-    uint256 public giftTokenPerBlock;
+    uint256 public giftPerBlock;
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes Stake tokens.
@@ -49,8 +50,8 @@ contract NTokenStaking is Ownable,IStakingRewards {
     uint256 public totalAllocPoint = 0;
     // The block number when HPT mining starts.
     uint256 public startBlock;
-    uint256 public giftTokenRewardBalance;
-    uint256 public giftTokenRewardTotal;
+    uint256 public giftRewardBalance;
+    uint256 public giftRewardTotal;
     address public factory;
     address public WHT;
     uint256 one = 1e18;
@@ -67,13 +68,13 @@ contract NTokenStaking is Ownable,IStakingRewards {
     event Claim(address token, address indexed user, address to, uint amount);
 
     constructor(
-        IERC20 _giftToken,
-        uint256 _giftTokenPerBlock,
+        IERC20 _gift,
+        uint256 _giftPerBlock,
         uint256 _startBlock,
         address _WHT
     ) public {
-        giftToken = _giftToken;
-        giftTokenPerBlock = _giftTokenPerBlock;
+        gift = _gift;
+        giftPerBlock = _giftPerBlock;
         startBlock = _startBlock;
         WHT = _WHT;
     }
@@ -84,12 +85,12 @@ contract NTokenStaking is Ownable,IStakingRewards {
     }
 
     function getRewardToken() external override returns(address) {
-        return address(giftToken);
+        return address(gift);
     }
 
-    function getPid(address stakeToken) public override returns(uint) {
-        if (poolLenMap[stakeToken] > 0) {
-            return poolLenMap[stakeToken] - 1;
+    function getPid(address stake) public override returns(uint) {
+        if (poolLenMap[stake] > 0) {
+            return poolLenMap[stake] - 1;
         }
         return uint(-1);
     }
@@ -101,14 +102,14 @@ contract NTokenStaking is Ownable,IStakingRewards {
         opInfoMap[op].enable = enable;
     }
 
-    function setGiftTokenPerBlock(uint _giftTokenPerBlock) public onlyOwner {
+    function setGiftPerBlock(uint _giftPerBlock) public onlyOwner {
         massUpdatePools();
-        giftTokenPerBlock = _giftTokenPerBlock;
+        giftPerBlock = _giftPerBlock;
     }
 
-    function giftTokenRewardPerBlock(uint _pid) external view returns(uint)  {
+    function giftRewardPerBlock(uint _pid) external view returns(uint)  {
         PoolInfo storage pool = poolInfo[_pid];
-        return giftTokenPerBlock.mul(pool.allocPoint).div(totalAllocPoint);
+        return giftPerBlock.mul(pool.allocPoint).div(totalAllocPoint);
     }
 
     function poolLength() external view returns (uint256) {
@@ -116,34 +117,34 @@ contract NTokenStaking is Ownable,IStakingRewards {
     }
 
     function revoke() public onlyOwner {
-        giftToken.transfer(msg.sender, giftToken.balanceOf(address(this)));
+        gift.transfer(msg.sender, gift.balanceOf(address(this)));
     }
 
     // Add a new stake to the pool. Can only be called by the owner.
     // XXX DO NOT add the same Stake token more than once. Rewards will be messed up if you do.
     function add(
         uint256 _allocPoint,
-        IERC20 _stakeToken
+        IERC20 _stake
     ) public onlyOwner {
-        require(poolLenMap[address(_stakeToken)] == 0, 'stake pool already exist');
+        require(poolLenMap[address(_stake)] == 0, 'stake pool already exist');
         massUpdatePools();
         uint256 lastRewardBlock =
         block.number > startBlock ? block.number : startBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         Treasury treasury= new Treasury();
-        giftToken.approve(address(treasury), uint256(-1));
+        gift.approve(address(treasury), uint256(-1));
 
         poolInfo.push(
             PoolInfo({
-            stakeToken: _stakeToken,
+            stake: _stake,
             allocPoint: _allocPoint,
             lastRewardBlock: lastRewardBlock,
-            accGiftTokenPerShare: 0,
+            accGiftPerShare: 0,
             stakeBalance: 0,
             treasury: treasury
             })
         );
-        poolLenMap[address(_stakeToken)] = poolInfo.length;
+        poolLenMap[address(_stake)] = poolInfo.length;
     }
 
     // Update the given pool's HPT allocation point. Can only be called by the owner.
@@ -167,29 +168,41 @@ contract NTokenStaking is Ownable,IStakingRewards {
         return _to.sub(_from);
     }
 
-    // View function to see pending HPTs on frontend.
-    function pendingGiftToken(uint256 _pid, address _user)
+    function userTotalGiftReward(uint pid, address user) public view returns(uint) {
+        return userInfo[pid][user].giftRewarded + _pendingGift(pid, user);
+    }
+
+    function pendingGift(uint256 _pid, address _user)
     external
     view
     returns (uint256)
     {
         PoolInfo storage pool = poolInfo[_pid];
+        return _pendingGift(_pid, _user) + pool.treasury.userTokenAmt(_user, address(gift));
+    }
+
+    // View function to see pending HPTs on frontend.
+    function _pendingGift(uint256 _pid, address _user)
+    internal
+    view
+    returns (uint256)
+    {
+        PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        uint256 accGiftTokenPerShare = pool.accGiftTokenPerShare;
+        uint256 accGiftPerShare = pool.accGiftPerShare;
         uint256 stakeSupply = pool.stakeBalance;
         if (block.number > pool.lastRewardBlock && stakeSupply != 0) {
             uint256 multiplier =
             getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 giftTokenReward =
-            multiplier.mul(giftTokenPerBlock).mul(pool.allocPoint).div(
+            uint256 giftReward =
+            multiplier.mul(giftPerBlock).mul(pool.allocPoint).div(
                 totalAllocPoint
             );
-            accGiftTokenPerShare = accGiftTokenPerShare.add(
-                giftTokenReward.mul(1e12).div(stakeSupply)
+            accGiftPerShare = accGiftPerShare.add(
+                giftReward.mul(1e12).div(stakeSupply)
             );
         }
-        return user.amount.mul(accGiftTokenPerShare).div(1e12).sub(user.rewardDebt) +
-        pool.treasury.userTokenAmt(_user, address(giftToken));
+        return user.amount.mul(accGiftPerShare).div(1e12).sub(user.rewardDebt);
     }
 
     // Update reward vairables for all pools. Be careful of gas spending!
@@ -212,14 +225,14 @@ contract NTokenStaking is Ownable,IStakingRewards {
             return;
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 giftTokenReward =
-        multiplier.mul(giftTokenPerBlock).mul(pool.allocPoint).div(
+        uint256 giftReward =
+        multiplier.mul(giftPerBlock).mul(pool.allocPoint).div(
             totalAllocPoint
         );
-        giftTokenRewardBalance = giftTokenRewardBalance.add(giftTokenReward);
-        giftTokenRewardTotal = giftTokenRewardTotal.add(giftTokenReward);
-        pool.accGiftTokenPerShare = pool.accGiftTokenPerShare.add(
-            giftTokenReward.mul(1e12).div(stakeSupply)
+        giftRewardBalance = giftRewardBalance.add(giftReward);
+        giftRewardTotal = giftRewardTotal.add(giftReward);
+        pool.accGiftPerShare = pool.accGiftPerShare.add(
+            giftReward.mul(1e12).div(stakeSupply)
         );
 
         pool.lastRewardBlock = block.number;
@@ -232,19 +245,19 @@ contract NTokenStaking is Ownable,IStakingRewards {
 
         UserInfo storage user = userInfo[_pid][_user];
         if (user.amount > 0) {
-            // reward giftToken
-            uint256 giftTokenPending =
-            user.amount.mul(pool.accGiftTokenPerShare).div(1e12).sub(
+            // reward gift
+            uint256 giftPending =
+            user.amount.mul(pool.accGiftPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-            safeGiftTokenTransfer(pool, _user, giftTokenPending);
+            safeGiftTransfer(_pid, pool, _user, giftPending);
         }
 
-        pool.stakeToken.safeTransferFrom(msg.sender, address(this), _amount);
+        pool.stake.safeTransferFrom(msg.sender, address(this), _amount);
 
         pool.stakeBalance = pool.stakeBalance.add(_amount);
         user.amount = user.amount.add(_amount);
-        user.rewardDebt = user.amount.mul(pool.accGiftTokenPerShare).div(1e12);
+        user.rewardDebt = user.amount.mul(pool.accGiftPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -256,19 +269,19 @@ contract NTokenStaking is Ownable,IStakingRewards {
         updatePool(_pid);
 
         {
-            // reward giftToken
+            // reward gift
             uint256 pending =
-            user.amount.mul(pool.accGiftTokenPerShare).div(1e12).sub(
+            user.amount.mul(pool.accGiftPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-            safeGiftTokenTransfer(pool, _user, pending);
+            safeGiftTransfer(_pid, pool, _user, pending);
         }
 
         pool.stakeBalance = pool.stakeBalance.sub(_amount);
         user.amount = user.amount.sub(_amount);
-        user.rewardDebt = user.amount.mul(pool.accGiftTokenPerShare).div(1e12);
+        user.rewardDebt = user.amount.mul(pool.accGiftPerShare).div(1e12);
 
-        pool.stakeToken.safeTransfer(msg.sender, _amount);
+        pool.stake.safeTransfer(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _pid, _amount);
     }
@@ -284,17 +297,18 @@ contract NTokenStaking is Ownable,IStakingRewards {
     }
 
     function claimAll(uint _pid, address _user, address to) public override checkOp {
-        claim(_pid, address(giftToken), _user, to);
+        claim(_pid, address(gift), _user, to);
     }
 
-    function safeGiftTokenTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {
-        giftTokenRewardBalance = giftTokenRewardBalance.sub(_amount);
-        uint256 giftTokenBal = giftToken.balanceOf(address(this));
-        if (_amount > giftTokenBal) {
-            _amount = giftTokenBal;
+    function safeGiftTransfer(uint256 pid, PoolInfo memory pool, address _to, uint256 _amount) internal {
+        giftRewardBalance = giftRewardBalance.sub(_amount);
+        userInfo[pid][_to].giftRewarded += _amount;
+        uint256 giftBal = gift.balanceOf(address(this));
+        if (_amount > giftBal) {
+            _amount = giftBal;
         }
 
-        pool.treasury.deposit(_to, address(giftToken), _amount);
+        pool.treasury.deposit(_to, address(gift), _amount);
     }
 
 fallback() external {}

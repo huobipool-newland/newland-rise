@@ -32,6 +32,8 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         uint256 amount; // How many LP tokens the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
         uint256 mdxRewardDebt;
+        uint256 hptRewarded;
+        uint256 mdxRewarded;
     }
     // Info of each pool.
     struct PoolInfo {
@@ -206,9 +208,26 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         return _to.sub(_from);
     }
 
+    function userTotalHptReward(uint pid, address user) public view returns(uint) {
+        return userInfo[pid][user].hptRewarded + _pendingHpt(pid, user);
+    }
+
+    function userTotalMdxReward(uint pid, address user) public view returns(uint) {
+        return userInfo[pid][user].mdxRewarded + _pendingMdx(pid, user);
+    }
+
     // View function to see pending HPTs on frontend.
     function pendingHpt(uint256 _pid, address _user)
     external
+    view
+    returns (uint256)
+    {
+        PoolInfo storage pool = poolInfo[_pid];
+        return _pendingHpt(_pid, _user) + pool.treasury.userTokenAmt(_user, address(hpt));
+    }
+
+    function _pendingHpt(uint256 _pid, address _user)
+    internal
     view
     returns (uint256)
     {
@@ -227,13 +246,22 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
                 hptReward.mul(1e12).div(lpSupply)
             );
         }
-        return user.amount.mul(accHptPerShare).div(1e12).sub(user.rewardDebt) +
-        pool.treasury.userTokenAmt(_user, address(hpt));
+        return user.amount.mul(accHptPerShare).div(1e12).sub(user.rewardDebt);
     }
 
     // View function to see pending HPTs on frontend.
     function pendingMdx(uint256 _pid, address _user)
     external
+    view
+    returns (uint256)
+    {
+        PoolInfo storage pool = poolInfo[_pid];
+        return _pendingMdx(_pid, _user) + pool.treasury.userTokenAmt(_user, address(mdx));
+    }
+
+    // View function to see pending HPTs on frontend.
+    function _pendingMdx(uint256 _pid, address _user)
+    internal
     view
     returns (uint256)
     {
@@ -250,8 +278,7 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
                 mdxReward.mul(1e12).div(lpSupply)
             );
         }
-        return user.amount.mul(accMdxPerShare).div(1e12).sub(user.mdxRewardDebt) +
-        pool.treasury.userTokenAmt(_user, address(mdx));
+        return user.amount.mul(accMdxPerShare).div(1e12).sub(user.mdxRewardDebt);
     }
 
     // Update reward vairables for all pools. Be careful of gas spending!
@@ -317,14 +344,14 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
             user.amount.mul(pool.accHptPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-            safeHptTransfer(pool, _user, hptPending);
+            safeHptTransfer(_pid, pool, _user, hptPending);
 
             // reward mdx
             uint256 mdxPending =
             user.amount.mul(pool.accMdxPerShare).div(1e12).sub(
                 user.mdxRewardDebt
             );
-            safeMdxTransfer(pool, _user, mdxPending);
+            safeMdxTransfer(_pid, pool, _user, mdxPending);
         }
 
         pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -351,14 +378,14 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
             user.amount.mul(pool.accHptPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-            safeHptTransfer(pool, _user, pending);
+            safeHptTransfer(_pid, pool, _user, pending);
 
             // reward mdx
             uint256 mdxPending =
             user.amount.mul(pool.accMdxPerShare).div(1e12).sub(
                 user.mdxRewardDebt
             );
-            safeMdxTransfer(pool, _user, mdxPending);
+            safeMdxTransfer(_pid, pool, _user, mdxPending);
         }
 
         pool.lpBalance = pool.lpBalance.sub(_amount);
@@ -387,8 +414,9 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         claim(_pid, address(mdx), _user, to);
     }
 
-    function safeHptTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {
+    function safeHptTransfer(uint256 pid, PoolInfo memory pool, address _to, uint256 _amount) internal {
         hptRewardBalance = hptRewardBalance.sub(_amount);
+        userInfo[pid][_to].hptRewarded += _amount;
         uint256 hptBal = hpt.balanceOf(address(this));
         if (_amount > hptBal) {
             _amount = hptBal;
@@ -397,8 +425,9 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         pool.treasury.deposit(_to, address(hpt), _amount);
     }
 
-    function safeMdxTransfer(PoolInfo memory pool, address _to, uint256 _amount) internal {
+    function safeMdxTransfer(uint256 pid, PoolInfo memory pool, address _to, uint256 _amount) internal {
         mdxRewardBalance = mdxRewardBalance.sub(_amount);
+        userInfo[pid][_to].mdxRewarded += _amount;
         uint256 mdxBal = mdx.balanceOf(address(this));
         if (_amount > mdxBal) {
             _amount = mdxBal;
