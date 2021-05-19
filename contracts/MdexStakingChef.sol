@@ -32,8 +32,8 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         uint256 amount; // How many LP tokens the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
         uint256 mdxRewardDebt;
-        uint256 hptRewarded;
-        uint256 mdxRewarded;
+        uint256 hptRewarded;  //accumlated total
+        uint256 mdxRewarded;  //accumlated total
     }
     // Info of each pool.
     struct PoolInfo {
