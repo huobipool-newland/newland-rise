@@ -18,7 +18,7 @@ contract Treasury is Ownable {
     }
 
     function withdraw(address user, address token, uint amt, address to) public onlyOwner returns(uint) {
-        require(userTokenAmt[user][token] >= amt, "uane");
+        require(userTokenAmt[user][token] >= amt, "user amt not enough");
 
         userTokenAmt[user][token] -= amt;
         tokenTotalAmt[token] -= amt;

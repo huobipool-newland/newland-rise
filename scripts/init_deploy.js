@@ -70,14 +70,14 @@ async function main() {
         await chef.$setOps(goblin.address, true)
     }
     if (config.$isNew) {
-        await config.$setParams(1, 1, model.address);
+        await config.$setParams(1, 1, model.address); // todo
     }
     if (bank.$isNew) {
         await bank.$updateConfig(config.address);
         await bank.$addToken(USDT, 'nUSDT');
         await bank.$addToken(HUSD, 'nHUSD');
-        await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, 0);
-        await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, 0);
+        await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
+        await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, false);
     }
 
     await $deploy('Lens', bank.address, priceOracle.address);

@@ -9,8 +9,10 @@ import "./library/SafeToken.sol";
 import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./NTokenFactory.sol";
+import "./interface/ILoanPlat.sol";
+import "./interface/IBank.sol";
 
-contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
+contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     using SafeToken for address;
     using SafeMath for uint256;
 
@@ -39,7 +41,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         uint256 openFactor;
         uint256 liquidateFactor;
         uint group;
-        uint liqVerify;
+        bool liqVerifyOracle;
     }
 
     struct Position {
@@ -49,6 +51,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     IBankConfig public config;
+    ILoanPlat public loanPlat;
 
     mapping(address => TokenBank) public banks;
     address[] public bankTokens;
@@ -110,7 +113,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     /// write
-    function deposit(address token, uint256 amount) external payable nonReentrant {
+    function deposit(address token, uint256 amount) external payable override nonReentrant {
         TokenBank storage bank = banks[token];
         require(bank.isOpen && bank.canDeposit, 'Token not exist or cannot deposit');
 
@@ -130,7 +133,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         NToken(bank.nTokenAddr).mint(msg.sender, pAmount);
     }
 
-    function withdraw(address token, uint256 pAmount) external nonReentrant {
+    function withdraw(address token, uint256 pAmount) external override nonReentrant {
         TokenBank storage bank = banks[token];
         require(bank.isOpen && bank.canWithdraw, 'Token not exist or cannot withdraw');
 
@@ -189,7 +192,13 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
             beforeToken = address(this).balance.sub(sendHT);
         } else {
             beforeToken = SafeToken.myBalance(production.borrowToken);
-            require(borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal, "insufficient borrowToken in the bank");
+            bool pass = borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal;
+            if (!pass) {
+                loanPlat.loanAndDeposit(production.borrowToken, borrow);
+                beforeToken = SafeToken.myBalance(production.borrowToken);
+                pass = borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal;
+            }
+            require(pass, "insufficient borrowToken in the bank");
             beforeToken = beforeToken.sub(borrow);
             SafeToken.safeApprove(production.borrowToken, production.goblin, borrow);
         }
@@ -215,6 +224,15 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
             _addDebt(positions[posId], production, debt);
         }
+
+        if (!isBorrowHt) {
+            TokenBank storage borrowBank = banks[production.borrowToken];
+            uint256 total = totalToken(production.borrowToken);
+            uint256 nTotal = NToken(borrowBank.nTokenAddr).totalSupply();
+            uint borrowBankAmt = SafeToken.myBalance(production.borrowToken);
+            uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
+            loanPlat.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
+        }
         emit OpPosition(posId, debt, backToken);
     }
 
@@ -225,12 +243,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
 
         uint256 debt = _removeDebt(pos, production);
 
-        if (production.liqVerify == 0 || production.liqVerify == 2) {
-            uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
-            require(health.mul(production.liquidateFactor) < debt.mul(10000), "health: can't liquidate");
-        }
+        uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
+        require(health.mul(production.liquidateFactor) < debt.mul(10000), "health: can't liquidate");
 
-        if (production.liqVerify == 1 || production.liqVerify == 2) {
+        if (production.liqVerifyOracle) {
             uint256 healthOracle = Goblin(production.goblin).healthOracle(posId, production.borrowToken);
             require(healthOracle.mul(production.liquidateFactor) < debt.mul(10000), "healthOracle: can't liquidate");
         }
@@ -317,6 +333,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         config = _config;
     }
 
+    function updateLoanPlat(ILoanPlat _loanPlat) external onlyOwner {
+        loanPlat = _loanPlat;
+    }
+
     function addToken(address token, string calldata _symbol) external onlyOwner {
         TokenBank storage bank = banks[token];
         require(!bank.isOpen, 'token already exists');
@@ -345,7 +365,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
     }
 
     function opProduction(uint256 pid, bool isOpen, bool canBorrow, address borrowToken, address goblin,
-        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group, uint liqVerify) external onlyOwner {
+        uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group, bool liqVerifyOracle) external onlyOwner {
 
         if(pid == 0){
             pid = currentPid;
@@ -365,7 +385,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard {
         production.openFactor = openFactor;
         production.liquidateFactor = liquidateFactor;
         production.group = group;
-        production.liqVerify = liqVerify;
+        production.liqVerifyOracle = liqVerifyOracle;
     }
 
     function calInterest(address token) public {
