@@ -4,10 +4,10 @@ pragma solidity ^0.6.0;
 import "./interface/IBank.sol";
 import "./interface/INewlandToken.sol";
 import "./library/SafeToken.sol";
-import "./interface/ILoanPlat.sol";
+import "./interface/ILendbridge.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NewlandLoanPlat is ILoanPlat, Ownable {
+contract NewlandLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
 
     IBank public bank;
@@ -31,20 +31,21 @@ contract NewlandLoanPlat is ILoanPlat, Ownable {
         INewlandToken newlandToken = newlandTokens[erc20];
         require(address(newlandToken) != address(0), 'newlandToken not support');
 
-        uint erc20Before = erc20.myBalance();
         newlandToken.borrow(amt);
-        uint erc20Now = erc20.myBalance();
 
-        require(erc20Now >= erc20Before, 'borrow from newland failed');
-
-        uint erc20Amt = erc20Now - erc20Before;
+        uint erc20Amt = erc20.myBalance();
         require(erc20Amt >= amt, 'borrow from newland failed');
+        if (erc20Amt > amt) {
+            erc20.safeTransfer(owner(), erc20Amt - amt);
+        }
 
-        erc20.safeApprove(address(newlandToken), erc20Amt);
-        bank.deposit(erc20, erc20Amt);
+        erc20.safeApprove(address(newlandToken), amt);
+        bank.deposit(erc20, amt);
     }
 
     function withdrawAndRepay(address erc20, address nErc20, uint nAmt) public override onlyBank {
+        erc20.safeTransfer(owner(), erc20.myBalance());
+
         INewlandToken newlandToken = newlandTokens[erc20];
         require(address(newlandToken) != address(0), 'newlandToken not support');
 
@@ -52,15 +53,11 @@ contract NewlandLoanPlat is ILoanPlat, Ownable {
         if (nAmt > nErc20Amt) {
             nAmt = nErc20Amt;
         }
+        if (nAmt == 0) {
+            return;
+        }
 
-        uint erc20Before = erc20.myBalance();
         bank.withdraw(erc20, nAmt);
-        uint erc20Now = erc20.myBalance();
-
-        require(erc20Now >= erc20Before, 'withdraw from bank failed');
-
-        uint erc20Amt = erc20Now - erc20Before;
-
-        newlandToken.repayBorrow(erc20Amt);
+        newlandToken.repayBorrow(erc20.myBalance());
     }
 }

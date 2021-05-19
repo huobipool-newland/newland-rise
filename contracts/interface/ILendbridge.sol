@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.0;
 
-interface ILoanPlat {
+interface ILendbridge {
 
     function loanAndDeposit(address erc20, uint amt) external;
 

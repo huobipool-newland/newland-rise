@@ -9,7 +9,7 @@ import "./library/SafeToken.sol";
 import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./NTokenFactory.sol";
-import "./interface/ILoanPlat.sol";
+import "./interface/ILendbridge.sol";
 import "./interface/IBank.sol";
 
 contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
@@ -51,7 +51,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     IBankConfig public config;
-    ILoanPlat public loanPlat;
+    ILendbridge public lendbridge;
 
     mapping(address => TokenBank) public banks;
     address[] public bankTokens;
@@ -193,8 +193,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         } else {
             beforeToken = SafeToken.myBalance(production.borrowToken);
             bool pass = borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal;
-            if (!pass) {
-                loanPlat.loanAndDeposit(production.borrowToken, borrow);
+            if (!pass && address(lendbridge) != address(0)) {
+                lendbridge.loanAndDeposit(production.borrowToken, borrow);
                 beforeToken = SafeToken.myBalance(production.borrowToken);
                 pass = borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal;
             }
@@ -224,11 +224,14 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
             _addDebt(positions[posId], production, debt);
         }
-        repayLoanPlat(production);
+        repayLendbridge(production);
         emit OpPosition(posId, debt, backToken);
     }
 
-    function repayLoanPlat(Production memory production) internal {
+    function repayLendbridge(Production memory production) internal {
+        if (address(lendbridge) == address(0)) {
+            return;
+        }
         bool isBorrowHt = production.borrowToken == address(0);
         if (!isBorrowHt) {
             TokenBank storage borrowBank = banks[production.borrowToken];
@@ -236,7 +239,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             uint256 nTotal = NToken(borrowBank.nTokenAddr).totalSupply();
             uint borrowBankAmt = SafeToken.myBalance(production.borrowToken);
             uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
-            loanPlat.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
+            lendbridge.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
         }
     }
 
@@ -276,7 +279,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         } else {
             banks[production.borrowToken].totalVal = banks[production.borrowToken].totalVal.sub(debt).add(rest);
         }
-        repayLoanPlat(production);
+        repayLendbridge(production);
         emit Liquidate(posId, msg.sender, prize, left);
     }
 
@@ -338,8 +341,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         config = _config;
     }
 
-    function updateLoanPlat(ILoanPlat _loanPlat) external onlyOwner {
-        loanPlat = _loanPlat;
+    function updateLendbridge(ILendbridge _lendbridge) external onlyOwner {
+        lendbridge = _lendbridge;
     }
 
     function addToken(address token, string calldata _symbol) external onlyOwner {
