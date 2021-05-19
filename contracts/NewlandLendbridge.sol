@@ -44,7 +44,10 @@ contract NewlandLendbridge is ILendbridge, Ownable {
     }
 
     function withdrawAndRepay(address erc20, address nErc20, uint nAmt) public override onlyBank {
-        erc20.safeTransfer(owner(), erc20.myBalance());
+        uint erc20Amt = erc20.myBalance();
+        if (erc20Amt > 0) {
+            erc20.safeTransfer(owner(), erc20Amt);
+        }
 
         INewlandToken newlandToken = newlandTokens[erc20];
         require(address(newlandToken) != address(0), 'newlandToken not support');
