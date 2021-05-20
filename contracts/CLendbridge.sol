@@ -8,7 +8,7 @@ import "./interface/ILendbridge.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract NewlandLendbridge is ILendbridge, Ownable {
+contract CLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
     using SafeMath for uint256;
 

@@ -5,7 +5,7 @@ pragma solidity ^0.6.0;
 import "./interface/InterestModel.sol";
 import "./interface/ILendbridge.sol";
 
-contract NewlandLendModel is InterestModel {
+contract CLendInterestModel is InterestModel {
 
     ILendbridge public lendbridge;
 
