@@ -7,5 +7,7 @@ interface INewlandToken {
 
     function repayBorrow(uint repayAmount) external returns (uint);
 
-    function getInterestRate() external view returns (uint);
+    function borrowRatePerBlock() external view returns (uint);
+
+    function mint(uint mintAmount) external returns (uint);
 }

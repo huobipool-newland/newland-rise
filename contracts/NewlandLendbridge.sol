@@ -6,9 +6,11 @@ import "./interface/INewlandToken.sol";
 import "./library/SafeToken.sol";
 import "./interface/ILendbridge.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract NewlandLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
+    using SafeMath for uint256;
 
     IBank public bank;
 
@@ -64,10 +66,18 @@ contract NewlandLendbridge is ILendbridge, Ownable {
         newlandToken.repayBorrow(erc20.myBalance());
     }
 
-    function getInterestRate(address erc20) public view override returns(uint) {
+    function mintCollateral(address erc20, uint mintAmount) external onlyOwner {
         INewlandToken newlandToken = newlandTokens[erc20];
         require(address(newlandToken) != address(0), 'newlandToken not support');
 
-        return newlandToken.getInterestRate();
+        erc20.safeApprove(address(newlandToken), mintAmount);
+        newlandToken.mint(mintAmount);
+    }
+
+    function getInterestRate(address erc20) public view override returns(uint) {
+        INewlandToken newlandToken = newlandTokens[erc20];
+        require(address(newlandToken) != address(0), 'newlandToken not support');
+        // todo
+        return newlandToken.borrowRatePerBlock().div(3);
     }
 }
