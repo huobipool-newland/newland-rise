@@ -2,7 +2,7 @@
 pragma solidity ^0.6.0;
 
 import "./interface/IBank.sol";
-import "./interface/INewlandToken.sol";
+import "./interface/ICToken.sol";
 import "./library/SafeToken.sol";
 import "./interface/ILendbridge.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -14,15 +14,15 @@ contract NewlandLendbridge is ILendbridge, Ownable {
 
     IBank public bank;
 
-    mapping(address => INewlandToken) newlandTokens;
+    mapping(address => ICToken) cTokens;
 
     modifier onlyBank() {
         require(msg.sender == address(bank), 'only bank');
         _;
     }
 
-    function setNewlandToken(address erc20, INewlandToken _newlandToken) public onlyOwner {
-        newlandTokens[erc20] = _newlandToken;
+    function setCToken(address erc20, ICToken _cToken) public onlyOwner {
+        cTokens[erc20] = _cToken;
     }
 
     function setBank(IBank _bank) public onlyOwner {
@@ -30,10 +30,10 @@ contract NewlandLendbridge is ILendbridge, Ownable {
     }
 
     function loanAndDeposit(address erc20, uint amt) public override onlyBank {
-        INewlandToken newlandToken = newlandTokens[erc20];
-        require(address(newlandToken) != address(0), 'newlandToken not support');
+        ICToken cToken = cTokens[erc20];
+        require(address(cToken) != address(0), 'cToken not support');
 
-        newlandToken.borrow(amt);
+        cToken.borrow(amt);
 
         uint erc20Amt = erc20.myBalance();
         require(erc20Amt >= amt, 'borrow from newland failed');
@@ -41,7 +41,7 @@ contract NewlandLendbridge is ILendbridge, Ownable {
             erc20.safeTransfer(owner(), erc20Amt - amt);
         }
 
-        erc20.safeApprove(address(newlandToken), amt);
+        erc20.safeApprove(address(cToken), amt);
         bank.deposit(erc20, amt);
     }
 
@@ -51,8 +51,8 @@ contract NewlandLendbridge is ILendbridge, Ownable {
             erc20.safeTransfer(owner(), erc20Amt);
         }
 
-        INewlandToken newlandToken = newlandTokens[erc20];
-        require(address(newlandToken) != address(0), 'newlandToken not support');
+        ICToken cToken = cTokens[erc20];
+        require(address(cToken) != address(0), 'cToken not support');
 
         uint nErc20Amt = nErc20.myBalance();
         if (nAmt > nErc20Amt) {
@@ -63,21 +63,21 @@ contract NewlandLendbridge is ILendbridge, Ownable {
         }
 
         bank.withdraw(erc20, nAmt);
-        newlandToken.repayBorrow(erc20.myBalance());
+        cToken.repayBorrow(erc20.myBalance());
     }
 
     function mintCollateral(address erc20, uint mintAmount) external onlyOwner {
-        INewlandToken newlandToken = newlandTokens[erc20];
-        require(address(newlandToken) != address(0), 'newlandToken not support');
+        ICToken cToken = cTokens[erc20];
+        require(address(cToken) != address(0), 'cToken not support');
 
-        erc20.safeApprove(address(newlandToken), mintAmount);
-        newlandToken.mint(mintAmount);
+        erc20.safeApprove(address(cToken), mintAmount);
+        cToken.mint(mintAmount);
     }
 
     function getInterestRate(address erc20) public view override returns(uint) {
-        INewlandToken newlandToken = newlandTokens[erc20];
-        require(address(newlandToken) != address(0), 'newlandToken not support');
+        ICToken cToken = cTokens[erc20];
+        require(address(cToken) != address(0), 'cToken not support');
         // todo
-        return newlandToken.borrowRatePerBlock().div(3);
+        return cToken.borrowRatePerBlock().div(3);
     }
 }
