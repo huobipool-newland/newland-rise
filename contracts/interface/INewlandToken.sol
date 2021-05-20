@@ -6,4 +6,6 @@ interface INewlandToken {
     function borrow(uint borrowAmount) external returns (uint);
 
     function repayBorrow(uint repayAmount) external returns (uint);
+
+    function getInterestRate() external view returns (uint);
 }

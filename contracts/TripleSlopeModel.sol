@@ -8,7 +8,7 @@ import "./interface/InterestModel.sol";
 contract TripleSlopeModel is InterestModel {
     using SafeMath for uint256;
 
-    function getInterestRate(uint256 debt, uint256 floating) external override view returns (uint256) {
+    function getInterestRate(address /* token */, uint256 debt, uint256 floating) external override view returns (uint256) {
         uint256 total = debt.add(floating);
         uint256 utilization = total == 0? 0: debt.mul(10000).div(total);
         if (utilization < 5000) {

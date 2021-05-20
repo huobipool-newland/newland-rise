@@ -7,4 +7,6 @@ interface ILendbridge {
 
     function withdrawAndRepay(address erc20, address nErc20, uint nAmt) external;
 
+    function getInterestRate(address erc20) external view returns(uint) ;
+
 }

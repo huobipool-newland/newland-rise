@@ -63,4 +63,11 @@ contract NewlandLendbridge is ILendbridge, Ownable {
         bank.withdraw(erc20, nAmt);
         newlandToken.repayBorrow(erc20.myBalance());
     }
+
+    function getInterestRate(address erc20) public view override returns(uint) {
+        INewlandToken newlandToken = newlandTokens[erc20];
+        require(address(newlandToken) != address(0), 'newlandToken not support');
+
+        return newlandToken.getInterestRate();
+    }
 }

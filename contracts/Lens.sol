@@ -247,7 +247,7 @@ contract Lens {
 
         string memory symbol = ERC20(bankToken).symbol();
         //console.log(symbol);
-        uint256 interestRate = bankContract.config().getInterestRate(totalDebt, totalVal);
+        uint256 interestRate = bankContract.config().getInterestRate(bankToken, totalDebt, totalVal);
         //console.log(interestRate);
         uint256 priceInUsd = getPriceInUsd(bankToken);
         //console.log(priceInUsd);

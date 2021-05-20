@@ -17,7 +17,7 @@ contract BankConfig is IBankConfig, Ownable {
         interestModel = _interestModel;
     }
 
-    function getInterestRate(uint256 debt, uint256 floating) external override view returns (uint256) {
-        return interestModel.getInterestRate(debt, floating);
+    function getInterestRate(address token, uint256 debt, uint256 floating) external override view returns (uint256) {
+        return interestModel.getInterestRate(token, debt, floating);
     }
 }
