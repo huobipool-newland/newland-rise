@@ -10,15 +10,19 @@ contract CLendInterestModel is InterestModel {
     using SafeMath for uint256;
 
     ILendbridge public lendbridge;
+    uint addInterestRateYear;
 
-    constructor(ILendbridge _lendbridge) public {
+    constructor(ILendbridge _lendbridge, uint _addInterestRateYear) public {
         lendbridge = _lendbridge;
+        addInterestRateYear = _addInterestRateYear;
     }
 
     function getInterestRate(address token, uint256 debt, uint256 floating) external override view returns (uint256) {
         uint rate = lendbridge.getInterestRate(token);
         if (rate == 0) {
             rate = _getInterestRate(debt, floating);
+        } else {
+            rate = rate + (addInterestRateYear / 365 days);
         }
         return rate;
     }

@@ -8,7 +8,8 @@
     "ls": "npx hardhat run --network localhost",
     "hs": "npx hardhat run --network heco",
     "hts": "npx hardhat run --network hecoTest",
-    "fl": "node scripts/_fl.js"
+    "fl": "node scripts/_fl.js gen",
+    "cfl": "node scripts/_fl.js clear"
   },
   "keywords": [],
   "author": "",

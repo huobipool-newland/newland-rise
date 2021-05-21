@@ -2,20 +2,38 @@ const exec = require('child_process').exec;
 let fs = require('fs')
 let solHome = process.cwd() + "/contracts";
 
-for (let name of fs.readdirSync(solHome)) {
-    if (!name.endsWith('.sol')) {
-        continue
-    }
-    if (name.endsWith('_fl.sol')) {
-        continue
-    }
-    let path = solHome +'/' + name
-    let flPath = solHome +'/' + name.replace(/\.sol$/, '') + '_fl.sol'
-    e(`npx hardhat flatten ${path} > ${flPath}`).then(() => {
-        wrapper(flPath)
-        console.log(`${name} done`)
-    });
+let fns = {
+    'gen': gen,
+    'clear': clear
 }
+fns[process.argv[2]]();
+
+function gen() {
+    for (let name of fs.readdirSync(solHome)) {
+        if (!name.endsWith('.sol')) {
+            continue
+        }
+        if (name.endsWith('_fl.sol')) {
+            continue
+        }
+        let path = solHome +'/' + name
+        let flPath = solHome +'/' + name.replace(/\.sol$/, '') + '_fl.sol'
+        e(`npx hardhat flatten ${path} > ${flPath}`).then(() => {
+            wrapper(flPath)
+            console.log(`${name} done`)
+        });
+    }
+}
+
+function clear() {
+    for (let name of fs.readdirSync(solHome)) {
+        if (name.endsWith('_fl.sol')) {
+            let path = solHome +'/' + name
+            fs.unlinkSync(path)
+        }
+    }
+}
+
 
 function wrapper(flPath) {
     let text = String(fs.readFileSync(flPath))
