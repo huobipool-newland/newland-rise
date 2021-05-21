@@ -76,7 +76,9 @@ contract CLendbridge is ILendbridge, Ownable {
 
     function getInterestRate(address erc20) public view override returns(uint) {
         ICToken cToken = cTokens[erc20];
-        require(address(cToken) != address(0), 'cToken not support');
+        if (address(cToken) == address(0)) {
+            return 0;
+        }
         // todo
         return cToken.borrowRatePerBlock().div(3);
     }
