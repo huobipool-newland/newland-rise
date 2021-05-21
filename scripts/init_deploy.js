@@ -70,7 +70,7 @@ async function main() {
         await chef.$setOps(goblin.address, true)
     }
     if (config.$isNew) {
-        await config.$setParams(1, 1, model.address); // todo
+        await config.$setParams(2000, 800, model.address);
     }
     if (bank.$isNew) {
         await bank.$updateConfig(config.address);
