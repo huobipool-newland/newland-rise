@@ -32,6 +32,8 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         Treasury treasury;
     }
 
+    Treasury rewardTreasury;
+
     IERC20 public rewardToken;
     uint256 public rewardPerBlock;
     PoolInfo[] public poolInfo;
@@ -56,6 +58,18 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         rewardToken = _rewardToken;
         rewardPerBlock = _rewardPerBlock;
         startBlock = _startBlock;
+
+        rewardTreasury = new Treasury();
+        rewardToken.approve(address(rewardTreasury), uint256(-1));
+    }
+
+    function addReward(uint amount) public onlyOps {
+        rewardToken.safeTransferFrom(msg.sender, address(0), amount);
+        for(uint i = 0; i< poolInfo.length; i++) {
+            rewardTreasury.deposit(address(poolInfo[i].stake),
+                address(rewardToken),
+                amount.mul(poolInfo[i].allocPoint).div(totalAllocPoint));
+        }
     }
 
     function getRewardToken() external override returns(address) {
@@ -126,15 +140,6 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // Return reward multiplier over the given _from to _to block.
-    function getMultiplier(uint256 _from, uint256 _to)
-    internal
-    pure
-    returns (uint256)
-    {
-        return _to.sub(_from);
-    }
-
     function userTotalReward(uint pid, address user) public view returns(uint) {
         return userInfo[pid][user].rewarded + _pendingReward(pid, user);
     }
@@ -159,13 +164,9 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         uint256 accRewardPerShare = pool.accRewardPerShare;
         uint256 stakeSupply = pool.stakeBalance;
         if (block.number > pool.lastRewardBlock && stakeSupply != 0) {
-            uint256 multiplier =
-            getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 reward =
-            multiplier.mul(rewardPerBlock).mul(pool.allocPoint).div(
-                totalAllocPoint
-            );
-            accRewardPerShare = accRewardPerShare.add(
+            // todo reward = ???
+            uint reward = 0;
+            accRewardPerShare = pool.accRewardPerShare.add(
                 reward.mul(1e12).div(stakeSupply)
             );
         }
@@ -191,11 +192,9 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
             pool.lastRewardBlock = block.number;
             return;
         }
-        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 reward =
-        multiplier.mul(rewardPerBlock).mul(pool.allocPoint).div(
-            totalAllocPoint
-        );
+
+        uint reward = rewardTreasury.userTokenAmt(address(pool.stake), address(rewardToken));
+        rewardTreasury.withdraw(address(pool.stake), address(rewardToken), reward, address(this));
         rewardBalance = rewardBalance.add(reward);
         rewardTotal = rewardTotal.add(reward);
         pool.accRewardPerShare = pool.accRewardPerShare.add(
@@ -218,8 +217,6 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
             );
             safeRewardTransfer(_pid, pool, _user, rewardPending);
         }
-
-        pool.stake.safeTransferFrom(msg.sender, address(this), _amount);
 
         pool.stakeBalance = pool.stakeBalance.add(_amount);
         user.amount = user.amount.add(_amount);
@@ -245,8 +242,6 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         pool.stakeBalance = pool.stakeBalance.sub(_amount);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accRewardPerShare).div(1e12);
-
-        pool.stake.safeTransfer(msg.sender, _amount);
 
         emit Withdraw(msg.sender, _pid, _amount);
     }
