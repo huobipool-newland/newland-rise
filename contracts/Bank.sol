@@ -468,9 +468,9 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         (address token, uint claimAmt) = _claimLendbridge();
         if (token != address(0)) {
             rewardCounter.addReward(token, claimAmt);
-            rewardCounter.claim(msg.sender, token);
             (,,uint userReward) = rewardCounter.userInfos(msg.sender, token);
             rewardTreasury.withdraw(address(0), token, userReward, msg.sender);
+            rewardCounter.claim(msg.sender, token);
         }
     }
 

@@ -13,6 +13,7 @@ contract CLendbridge is ILendbridge, Ownable {
     using SafeMath for uint256;
 
     IBank public bank;
+    address rewardToken;
 
     mapping(address => ICToken) cTokens;
 
@@ -27,6 +28,9 @@ contract CLendbridge is ILendbridge, Ownable {
 
     function setBank(IBank _bank) public onlyOwner {
         bank = _bank;
+    }
+    function setRewardToken(address _rewardToken) public onlyOwner {
+        rewardToken = _rewardToken;
     }
 
     function loanAndDeposit(address erc20, uint amt) public override onlyBank {
@@ -84,6 +88,6 @@ contract CLendbridge is ILendbridge, Ownable {
     }
 
     function claim() public override returns(address, uint) {
-        return (address(0), 0);
+        return (rewardToken, 0);
     }
 }
