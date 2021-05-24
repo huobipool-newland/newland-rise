@@ -5,12 +5,8 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interface/IMdexFactory.sol";
-import "./interface/IMdexPair.sol";
-import "./interface/IWHT.sol";
 import "./interface/IMdexChef.sol";
 import "./library/TransferHelper.sol";
 import "./interface/IStakingRewards.sol";
@@ -63,8 +59,6 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
     uint256 public mdxRewardBalance;
     uint256 public hptRewardTotal;
     uint256 public mdxRewardTotal;
-    address public factory;
-    address public WHT;
     IMdexChef public mdxChef;
     uint256 public mdxProfitRate;
     IERC20 public mdx;
@@ -75,19 +69,12 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event EmergencyWithdraw(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount
-    );
     event Claim(address token, address indexed user, address to, uint amount);
 
     constructor(
         IERC20 _hpt,
         uint256 _hptPerBlock,
         uint256 _startBlock,
-        address _mdxFactory,
-        address _WHT,
         IMdexChef _mdxChef,
         uint256 _mdxProfitRate,
         IERC20 _mdx,
@@ -96,8 +83,6 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         hpt = _hpt;
         hptPerBlock = _hptPerBlock;
         startBlock = _startBlock;
-        factory = _mdxFactory;
-        WHT = _WHT;
         mdxChef = _mdxChef;
         mdxProfitRate = _mdxProfitRate;
         mdx = _mdx;
