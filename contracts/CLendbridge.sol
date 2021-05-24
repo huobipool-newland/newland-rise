@@ -14,6 +14,7 @@ contract CLendbridge is ILendbridge, Ownable {
 
     IBank public bank;
     address rewardToken;
+    address claimContract;
 
     mapping(address => ICToken) cTokens;
 
@@ -22,15 +23,14 @@ contract CLendbridge is ILendbridge, Ownable {
         _;
     }
 
-    function setCToken(address erc20, ICToken _cToken) public onlyOwner {
-        cTokens[erc20] = _cToken;
+    constructor(IBank _bank, address _rewardToken, address _claimContract) public {
+        bank = _bank;
+        rewardToken = _rewardToken;
+        claimContract = _claimContract;
     }
 
-    function setBank(IBank _bank) public onlyOwner {
-        bank = _bank;
-    }
-    function setRewardToken(address _rewardToken) public onlyOwner {
-        rewardToken = _rewardToken;
+    function setCToken(address erc20, ICToken _cToken) public onlyOwner {
+        cTokens[erc20] = _cToken;
     }
 
     function loanAndDeposit(address erc20, uint amt) public override onlyBank {
@@ -87,7 +87,15 @@ contract CLendbridge is ILendbridge, Ownable {
         return cToken.borrowRatePerBlock().div(3);
     }
 
+    function claimable() public view override returns(bool) {
+        return rewardToken != address(0) && claimContract != address(0);
+    }
+
     function claim() public override returns(address, uint) {
-        return (rewardToken, 0);
+        bytes4 methodId = bytes4(keccak256("claim(address)"));
+        uint before = rewardToken.myBalance();
+        (bool success,) = claimContract.call(abi.encodeWithSelector(methodId, rewardToken));
+        require(success, 'claim CLendbridge failed');
+        return (rewardToken, rewardToken.myBalance().sub(before));
     }
 }

@@ -330,8 +330,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         bank.totalDebt = bank.totalDebt.add(debtVal);
 
         if (address(lendbridge) != address(0)) {
-            (address token, uint claimAmt) = _claimLendbridge();
-            if (token != address(0)) {
+            if (lendbridge.claimable()) {
+                (address token, uint claimAmt) = _claimLendbridge();
                 rewardCounter.updateChip(claimAmt, pos.owner, token, debtVal);
             }
         }
@@ -350,8 +350,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             bank.totalDebt = bank.totalDebt.sub(debtVal);
 
             if (address(lendbridge) != address(0)) {
-                (address token, uint claimAmt) = _claimLendbridge();
-                if (token != address(0)) {
+                if (lendbridge.claimable()) {
+                    (address token, uint claimAmt) = _claimLendbridge();
                     rewardCounter.updateChip(claimAmt, pos.owner, token, debtVal);
                 }
             }
@@ -465,21 +465,19 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
     function claimLendbridge() public {
         require(address(lendbridge) != address(0), 'lendbridge not found');
+        require(lendbridge.claimable(), 'lendbridge disable for claim');
+
         (address token, uint claimAmt) = _claimLendbridge();
-        if (token != address(0)) {
-            rewardCounter.addReward(token, claimAmt);
-            (,,uint userReward) = rewardCounter.userInfos(msg.sender, token);
-            rewardTreasury.withdraw(address(0), token, userReward, msg.sender);
-            rewardCounter.claim(msg.sender, token);
-        }
+        rewardCounter.addReward(token, claimAmt);
+        (,,uint userReward) = rewardCounter.userInfos(msg.sender, token);
+        rewardTreasury.withdraw(address(0), token, userReward, msg.sender);
+        rewardCounter.claim(msg.sender, token);
     }
 
     function _claimLendbridge() internal returns(address, uint){
         (address token, uint claimAmt) = lendbridge.claim();
-        if (token != address(0)) {
-            token.safeApprove(address(rewardTreasury), claimAmt);
-            rewardTreasury.deposit(address(0), token, claimAmt);
-        }
+        token.safeApprove(address(rewardTreasury), claimAmt);
+        rewardTreasury.deposit(address(0), token, claimAmt);
         return (token, claimAmt);
     }
 

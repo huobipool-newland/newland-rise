@@ -14,7 +14,7 @@ async function main() {
     await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
         params: [impersonateAccount]}
-      );
+    );
 
     const signer = await ethers.provider.getSigner(impersonateAccount);
     console.log('Balance: ' + (await signer.getBalance()).toString());
@@ -36,6 +36,11 @@ async function main() {
 
     await bankAddress.$connect(signer).$claim(cPosition);
     await bankAddress.$connect(signer).$claimAll();
+    try {
+        await bankAddress.$connect(signer).$claimLendbridge();
+    } catch (e) {
+        console.log(e)
+    }
 }
 
 main()

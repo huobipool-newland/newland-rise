@@ -11,9 +11,10 @@ let USDT_USD = '0xF0D3585D8dC9f1D1D1a7dd02b48C2630d9DD78eD'
 let MDX_USD = '0xaC4600b8F42317eAF056Cceb06cFf987c294840B'
 let WHT_USD = '0x8EC213E7191488C7873cEC6daC8e97cdbAdb7B35'
 
+let address0 = '0x0000000000000000000000000000000000000000'
 
 async function main() {
-    let cLendbridge = await $deploy('CLendbridge')
+
     let priceOracle = await $deploy("PriceOracle")
     if (priceOracle.$isNew) {
         await priceOracle.$setPriceFeed(USDT, USDT_USD);
@@ -22,13 +23,11 @@ async function main() {
         await priceOracle.$setPriceFeed(MDX, MDX_USD);
     }
 
+    let bank = await $deploy('Bank')
+    let cLendbridge = await $deploy('CLendbridge', bank.address, address0, address0)
     let model = await $deploy('CLendInterestModel', cLendbridge.address, '100000000000000000')
     let config = await $deploy('BankConfig')
-    let bank = await $deploy('Bank')
 
-    if (cLendbridge.$isNew) {
-        cLendbridge.$setBank(bank.address);
-    }
 
     let chef = await $deploy('MdexStakingChef',
         '0xe499ef4616993730ced0f31fa2703b92b50bb536', //hpt
