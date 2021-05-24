@@ -15,7 +15,7 @@ contract RewardCounter is Ownable {
         uint accPerShare;
         uint chipTotal;
     }
-    mapping(address => RewardInfo) rewardInfos;
+    mapping(address => RewardInfo) public rewardInfos;
 
     // Info of each user.
     struct UserInfo {
@@ -23,7 +23,7 @@ contract RewardCounter is Ownable {
         uint256 rewardDebt;
         uint holdReward;
     }
-    mapping(address => mapping(address => UserInfo)) userInfos;
+    mapping(address => mapping(address => UserInfo)) public userInfos;
 
     function addReward(address token, uint reward) public onlyOwner {
         RewardInfo storage rewardInfo = rewardInfos[token];
@@ -34,7 +34,9 @@ contract RewardCounter is Ownable {
         );
     }
 
-    function updateChip(address user, address token, uint chip) public onlyOwner {
+    function updateChip(uint reward, address user, address token, uint chip) public onlyOwner {
+        addReward(token, reward);
+
         UserInfo storage userInfo = userInfos[user][token];
         RewardInfo storage rewardInfo = rewardInfos[token];
         if (userInfo.chip > 0) {

@@ -46,7 +46,7 @@ async function main() {
         );
     }
 
-    let liqStrategy = await $deploy('LiqStrategy', MDX_ROUTER);
+    let liqStrategy = await $deploy('MdxLiqStrategy', MDX_ROUTER);
 
     let goblin = await $deploy('MdxGoblin',
         bank.address,//operator,

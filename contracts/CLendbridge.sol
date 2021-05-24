@@ -82,4 +82,8 @@ contract CLendbridge is ILendbridge, Ownable {
         // todo
         return cToken.borrowRatePerBlock().div(3);
     }
+
+    function claim() public override returns(address, uint) {
+        return (address(0), 0);
+    }
 }

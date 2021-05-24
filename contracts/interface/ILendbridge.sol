@@ -9,4 +9,5 @@ interface ILendbridge {
 
     function getInterestRate(address erc20) external view returns(uint) ;
 
+    function claim() external returns(address, uint);
 }

@@ -11,6 +11,8 @@ import "./interface/Goblin.sol";
 import "./NTokenFactory.sol";
 import "./interface/ILendbridge.sol";
 import "./interface/IBank.sol";
+import "./Treasury.sol";
+import "./RewardCounter.sol";
 
 contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     using SafeToken for address;
@@ -67,6 +69,14 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "not eoa");
         _;
+    }
+
+    Treasury public rewardTreasury;
+    RewardCounter public rewardCounter;
+
+    constructor() public {
+        rewardTreasury = new Treasury();
+        rewardCounter = new RewardCounter();
     }
 
     /// read
@@ -318,6 +328,13 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         bank.totalVal = bank.totalVal.sub(debtVal);
         bank.totalDebtShare = bank.totalDebtShare.add(debtShare);
         bank.totalDebt = bank.totalDebt.add(debtVal);
+
+        if (address(lendbridge) != address(0)) {
+            (address token, uint claimAmt) = _claimLendbridge();
+            if (token != address(0)) {
+                rewardCounter.updateChip(claimAmt, pos.owner, token, debtVal);
+            }
+        }
     }
 
     function _removeDebt(Position storage pos, Production storage production) internal returns (uint256) {
@@ -331,6 +348,14 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             bank.totalVal = bank.totalVal.add(debtVal);
             bank.totalDebtShare = bank.totalDebtShare.sub(debtShare);
             bank.totalDebt = bank.totalDebt.sub(debtVal);
+
+            if (address(lendbridge) != address(0)) {
+                (address token, uint claimAmt) = _claimLendbridge();
+                if (token != address(0)) {
+                    rewardCounter.updateChip(claimAmt, pos.owner, token, debtVal);
+                }
+            }
+
             return debtVal;
         } else {
             return 0;
@@ -436,6 +461,26 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         } else {
             SafeToken.safeTransfer(token, to, value);
         }
+    }
+
+    function claimLendbridge() public {
+        require(address(lendbridge) != address(0), 'lendbridge not found');
+        (address token, uint claimAmt) = _claimLendbridge();
+        if (token != address(0)) {
+            rewardCounter.addReward(token, claimAmt);
+            rewardCounter.claim(msg.sender, token);
+            (,,uint userReward) = rewardCounter.userInfos(msg.sender, token);
+            rewardTreasury.withdraw(address(0), token, userReward, msg.sender);
+        }
+    }
+
+    function _claimLendbridge() internal returns(address, uint){
+        (address token, uint claimAmt) = lendbridge.claim();
+        if (token != address(0)) {
+            token.safeApprove(address(rewardTreasury), claimAmt);
+            rewardTreasury.deposit(address(0), token, claimAmt);
+        }
+        return (token, claimAmt);
     }
 
 fallback() external {}

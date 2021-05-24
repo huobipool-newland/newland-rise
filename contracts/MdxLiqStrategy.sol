@@ -14,7 +14,7 @@ import "./interface/IMdexRouter.sol";
 import "./interface/IMdexPair.sol";
 import "./MdxExcessReward.sol";
 
-contract LiqStrategy is Ownable, ReentrancyGuard, Strategy, MdxExcessReward {
+contract MdxLiqStrategy is Ownable, ReentrancyGuard, Strategy, MdxExcessReward {
     using SafeToken for address;
     using SafeMath for uint256;
 
