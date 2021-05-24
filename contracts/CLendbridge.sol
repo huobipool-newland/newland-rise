@@ -52,18 +52,18 @@ contract CLendbridge is ILendbridge, Ownable {
         }
 
         ICToken cToken = cTokens[erc20];
-        require(address(cToken) != address(0), 'cToken not support');
+        if (address(cToken) != address(0)) {
+            uint nErc20Amt = nErc20.myBalance();
+            if (nAmt > nErc20Amt) {
+                nAmt = nErc20Amt;
+            }
+            if (nAmt == 0) {
+                return;
+            }
 
-        uint nErc20Amt = nErc20.myBalance();
-        if (nAmt > nErc20Amt) {
-            nAmt = nErc20Amt;
+            bank.withdraw(erc20, nAmt);
+            cToken.repayBorrow(erc20.myBalance());
         }
-        if (nAmt == 0) {
-            return;
-        }
-
-        bank.withdraw(erc20, nAmt);
-        cToken.repayBorrow(erc20.myBalance());
     }
 
     function mintCollateral(address erc20, uint mintAmount) external onlyOwner {

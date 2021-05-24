@@ -13,6 +13,7 @@ let WHT_USD = '0x8EC213E7191488C7873cEC6daC8e97cdbAdb7B35'
 
 
 async function main() {
+    let cLendbridge = await $deploy('CLendbridge')
     let priceOracle = await $deploy("PriceOracle")
     if (priceOracle.$isNew) {
         await priceOracle.$setPriceFeed(USDT, USDT_USD);
@@ -21,9 +22,14 @@ async function main() {
         await priceOracle.$setPriceFeed(MDX, MDX_USD);
     }
 
-    let model = await $deploy('TripleSlopeModel')
+    let model = await $deploy('CLendInterestModel', cLendbridge.address, '100000000000000000')
     let config = await $deploy('BankConfig')
     let bank = await $deploy('Bank')
+
+    if (cLendbridge.$isNew) {
+        cLendbridge.$setBank(bank.address);
+    }
+
     let chef = await $deploy('MdexStakingChef',
         '0xe499ef4616993730ced0f31fa2703b92b50bb536', //hpt
         '10000000000000000',//hptPerBlock
@@ -74,6 +80,7 @@ async function main() {
     }
     if (bank.$isNew) {
         await bank.$updateConfig(config.address);
+        await bank.$updateLendbridge(cLendbridge.address);
         await bank.$addToken(USDT, 'nUSDT');
         await bank.$addToken(HUSD, 'nHUSD');
         await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
