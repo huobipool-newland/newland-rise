@@ -93,6 +93,7 @@ contract CLendbridge is ILendbridge, Ownable {
         return rewardToken != address(0) && claimContract != address(0);
     }
 
+    // claim dep
     function claim() public override onlyBank returns(address, uint) {
         bytes4 methodId = bytes4(keccak256("claim(address)"));
         (bool success,) = claimContract.call(abi.encodeWithSelector(methodId, rewardToken));
