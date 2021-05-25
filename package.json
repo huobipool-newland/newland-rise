@@ -9,7 +9,8 @@
     "hs": "npx hardhat run --network heco",
     "hts": "npx hardhat run --network hecoTest",
     "fl": "node scripts/_fl.js gen",
-    "cfl": "node scripts/_fl.js clear"
+    "cfl": "node scripts/_fl.js clear",
+    "doc": "node scripts/_genDoc.js"
   },
   "keywords": [],
   "author": "",
