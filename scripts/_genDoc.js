@@ -1,5 +1,6 @@
 let fs = require('fs')
 let dataJson = require('./_data')
+let abiHome = '../artifacts/contracts/'
 
 let doc = '### 合约信息 \n'
 for (let key of Object.keys(dataJson["128"])) {
@@ -13,6 +14,10 @@ for (let key of Object.keys(dataJson["128"])) {
 - 初始化参数
 \`\`\`
 ${args}     
+\`\`\`  
+- 合约ABI
+\`\`\`
+${JSON.stringify(require(abiHome + `${name}_fl.sol/${name}.json`).abi)}
 \`\`\`        
 `;
 }
