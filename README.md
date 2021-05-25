@@ -1,37 +1,104 @@
-### Newland-rise
+### 合约信息 
 
-- 是一个杠杆挖矿项目，支持用户存款获取收益，支持用户借款进行挖矿
+#### LendRewardChef
+- 合约地址 0x0263B62bC79786b17972d31ceF1823e2AcA4294F     
+- 初始化参数
+```
+[0x48C859531254F25e57D1C1A8E030Ef0B1c895c27,
+0]     
+```        
 
-#### 合约介绍
+#### PriceOracle
+- 合约地址 0x6c11257a1D5fb9B8BF6DA8509459C1FbC5d2E955     
+- 初始化参数
+```
+[]     
+```        
 
-- Bank.sol
+#### Bank
+- 合约地址 0xD9907e90ff1744B5EC30E6974b1C35d3A1E76Cae     
+- 初始化参数
+```
+[]     
+```        
 
-主合约，主要功能为用户存款，用户取款，杠杆挖矿开补仓，杠杆挖矿赎回，领取奖励，添加银行币种，配置产品
+#### CLendbridge
+- 合约地址 0xa5A6400AA32461564A2272B0536Ecf4a9b4f6B50     
+- 初始化参数
+```
+[0xD9907e90ff1744B5EC30E6974b1C35d3A1E76Cae,
+0x0000000000000000000000000000000000000000,
+0x0000000000000000000000000000000000000000,
+0xe499ef4616993730ced0f31fa2703b92b50bb536]     
+```        
 
-- BankConfig.sol 
+#### CLendInterestModel
+- 合约地址 0xe2bF430f8513f6dD7852D3a934148C04bfe75a44     
+- 初始化参数
+```
+[0xa5A6400AA32461564A2272B0536Ecf4a9b4f6B50,
+100000000000000000]     
+```        
 
-银行参数配置合约，如挖矿利润系数，清算利润系数，借款利率
+#### BankConfig
+- 合约地址 0x32f991553C5Bd5Cd56A4F0d5aBE9D69567653FEc     
+- 初始化参数
+```
+[]     
+```        
 
-- TripleSlopeModel.sol
+#### MdexStakingChef
+- 合约地址 0x221883031219c29047CAD6b8076F8CB062cE51FE     
+- 初始化参数
+```
+[0xe499ef4616993730ced0f31fa2703b92b50bb536,
+10000000000000000,
+0,
+0xFB03e11D93632D97a8981158A632Dd5986F5E909,
+0,
+0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c,
+0x2f1178bd9596ab649014441dDB83c2f240B5527C]     
+```        
 
-借款利率具体实现
+#### MdxLiqStrategy
+- 合约地址 0x9CCF4d4A0D5099E8cEdEd58AEFDfDb8c05096e1c     
+- 初始化参数
+```
+[0xED7d5F38C79115ca12fe6C0041abb22F0A06C300]     
+```        
 
-- MdxGoblin.sol
+#### MdxGoblin
+- 合约地址 0x5298E923996b51b593273172c19A5b208F1CbC5c     
+- 初始化参数
+```
+[0xD9907e90ff1744B5EC30E6974b1C35d3A1E76Cae,
+0x221883031219c29047CAD6b8076F8CB062cE51FE,
+0xED7d5F38C79115ca12fe6C0041abb22F0A06C300,
+0xa71edc38d189767582c38a3145b5873052c3e47a,
+0x0298c2b32eaE4da002a15f36fdf7615BEa3DA047,
+0x9CCF4d4A0D5099E8cEdEd58AEFDfDb8c05096e1c,
+0x6c11257a1D5fb9B8BF6DA8509459C1FbC5d2E955]     
+```        
 
-针对Mdex的挖矿合约，主要功能为
+#### MdxStrategyAddTwoSidesOptimal
+- 合约地址 0xA8e4805766bB34aC8f7b06101A8B33f26B53B550     
+- 初始化参数
+```
+[0xED7d5F38C79115ca12fe6C0041abb22F0A06C300,
+0x5298E923996b51b593273172c19A5b208F1CbC5c]     
+```        
 
-- MdxStrategyAddTwoSidesOptimal.sol
+#### MdxStrategyWithdrawMinimizeTrading
+- 合约地址 0xF6AD9633401d33Fd29B36aF3a90521437c7096a5     
+- 初始化参数
+```
+[0xED7d5F38C79115ca12fe6C0041abb22F0A06C300]     
+```        
 
-- MdxStrategyWithdrawMinimizeTrading.sol
-
-- LiqStrategy.sol
-
-- MdexStakingChef.sol
-
-- BankConfig.sol 
-
-- Treasury.sol
-
-- PriceOracle.sol
-
-
+#### Lens
+- 合约地址 0xaFfAFa95a52A56590Bf65dE66A7eb03E762335B9     
+- 初始化参数
+```
+[0xD9907e90ff1744B5EC30E6974b1C35d3A1E76Cae,
+0x6c11257a1D5fb9B8BF6DA8509459C1FbC5d2E955]     
+```        
