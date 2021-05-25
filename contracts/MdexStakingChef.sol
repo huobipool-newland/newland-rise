@@ -130,7 +130,7 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         mdxProfitRate = _mdxProfitRate;
     }
 
-    function poolLength() external view returns (uint256) {
+    function poolLength() external view override returns (uint256) {
         return poolInfo.length;
     }
 

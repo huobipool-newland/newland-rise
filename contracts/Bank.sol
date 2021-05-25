@@ -11,8 +11,7 @@ import "./interface/Goblin.sol";
 import "./NTokenFactory.sol";
 import "./interface/ILendbridge.sol";
 import "./interface/IBank.sol";
-import "./Treasury.sol";
-import "./RewardCounter.sol";
+import "./interface/IStakingRewards.sol";
 
 contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     using SafeToken for address;
@@ -54,6 +53,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
     IBankConfig public config;
     ILendbridge public lendbridge;
+    IStakingRewards public lendRewardChef;
 
     mapping(address => TokenBank) public banks;
     address[] public bankTokens;
@@ -69,14 +69,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "not eoa");
         _;
-    }
-
-    Treasury public rewardTreasury;
-    RewardCounter public rewardCounter;
-
-    constructor() public {
-        rewardTreasury = new Treasury();
-        rewardCounter = new RewardCounter();
     }
 
     /// read
@@ -329,12 +321,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         bank.totalDebtShare = bank.totalDebtShare.add(debtShare);
         bank.totalDebt = bank.totalDebt.add(debtVal);
 
-        if (address(lendbridge) != address(0)) {
-            if (lendbridge.claimable()) {
-                (address token, uint claimAmt) = _claimLendbridge();
-                rewardCounter.updateChip(claimAmt, pos.owner, token, debtVal);
-            }
-        }
+        updateLendChef(pos, production, debtVal);
     }
 
     function _removeDebt(Position storage pos, Production storage production) internal returns (uint256) {
@@ -349,16 +336,27 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             bank.totalDebtShare = bank.totalDebtShare.sub(debtShare);
             bank.totalDebt = bank.totalDebt.sub(debtVal);
 
-            if (address(lendbridge) != address(0)) {
-                if (lendbridge.claimable()) {
-                    (address token, uint claimAmt) = _claimLendbridge();
-                    rewardCounter.updateChip(claimAmt, pos.owner, token, debtVal);
-                }
-            }
+            updateLendChef(pos, production, debtVal);
 
             return debtVal;
         } else {
             return 0;
+        }
+    }
+
+    function updateLendChef(Position storage pos, Production storage production, uint debtVal) internal {
+        if (address(lendbridge) != address(0)) {
+            if (lendbridge.claimable()) {
+                _claimLendbridge();
+            }
+        }
+        if (address(lendRewardChef) != address(0)) {
+            uint lendChefPid = lendRewardChef.getPid(production.borrowToken);
+            if (lendChefPid < uint(-1)) {
+                bytes4 methodId = bytes4(keccak256("updateAmount(uint256,uint256,address)"));
+                (bool success,) = address(lendRewardChef).call(abi.encodeWithSelector(methodId, lendChefPid, debtVal, pos.owner));
+                require(success, 'lendRewardChef updateAmount failed');
+            }
         }
     }
 
@@ -368,6 +366,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
     function updateLendbridge(ILendbridge _lendbridge) external onlyOwner {
         lendbridge = _lendbridge;
+    }
+
+    function updateLendRewardChef(IStakingRewards _lendRewardChef) external onlyOwner {
+        lendRewardChef = _lendRewardChef;
     }
 
     function addToken(address token, string calldata _symbol) external onlyOwner {
@@ -467,17 +469,18 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         require(address(lendbridge) != address(0), 'lendbridge not found');
         require(lendbridge.claimable(), 'lendbridge disable for claim');
 
-        (address token, uint claimAmt) = _claimLendbridge();
-        rewardCounter.addReward(token, claimAmt);
-        (,,uint userReward) = rewardCounter.userInfos(msg.sender, token);
-        rewardTreasury.withdraw(address(0), token, userReward, msg.sender);
-        rewardCounter.claim(msg.sender, token);
+        _claimLendbridge();
+        for(uint i = 0; i<lendRewardChef.poolLength(); i++) {
+            lendRewardChef.claimAll(i, msg.sender, msg.sender);
+        }
     }
 
     function _claimLendbridge() internal returns(address, uint){
         (address token, uint claimAmt) = lendbridge.claim();
-        token.safeApprove(address(rewardTreasury), claimAmt);
-        rewardTreasury.deposit(address(0), token, claimAmt);
+        token.safeApprove(address(lendRewardChef), claimAmt);
+        bytes4 methodId = bytes4(keccak256("addReward(uint)"));
+        (bool success,) = address(lendRewardChef).call(abi.encodeWithSelector(methodId, claimAmt));
+        require(success, 'lendRewardChef addReward failed');
         return (token, claimAmt);
     }
 

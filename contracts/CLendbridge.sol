@@ -13,8 +13,9 @@ contract CLendbridge is ILendbridge, Ownable {
     using SafeMath for uint256;
 
     IBank public bank;
-    address rewardToken;
-    address claimContract;
+    address public rewardToken;
+    address public claimContract;
+    address public HPT;
 
     mapping(address => ICToken) cTokens;
 
@@ -23,10 +24,11 @@ contract CLendbridge is ILendbridge, Ownable {
         _;
     }
 
-    constructor(IBank _bank, address _rewardToken, address _claimContract) public {
+    constructor(IBank _bank, address _rewardToken, address _claimContract, address _hpt) public {
         bank = _bank;
         rewardToken = _rewardToken;
         claimContract = _claimContract;
+        HPT = _hpt;
     }
 
     function setCToken(address erc20, ICToken _cToken) public onlyOwner {
@@ -45,7 +47,7 @@ contract CLendbridge is ILendbridge, Ownable {
             erc20.safeTransfer(owner(), erc20Amt - amt);
         }
 
-        erc20.safeApprove(address(cToken), amt);
+        erc20.safeApprove(address(bank), amt);
         bank.deposit(erc20, amt);
     }
 
@@ -91,11 +93,16 @@ contract CLendbridge is ILendbridge, Ownable {
         return rewardToken != address(0) && claimContract != address(0);
     }
 
-    function claim() public override returns(address, uint) {
+    function claim() public override onlyBank returns(address, uint) {
         bytes4 methodId = bytes4(keccak256("claim(address)"));
-        uint before = rewardToken.myBalance();
         (bool success,) = claimContract.call(abi.encodeWithSelector(methodId, rewardToken));
         require(success, 'claim CLendbridge failed');
-        return (rewardToken, rewardToken.myBalance().sub(before));
+        uint rewardAmt = rewardToken.myBalance();
+        rewardToken.safeTransfer(address(bank), rewardAmt);
+        return (rewardToken, rewardAmt);
+    }
+
+    function withdrawHpt() public onlyOwner {
+        HPT.safeTransfer(owner(), HPT.myBalance());
     }
 }

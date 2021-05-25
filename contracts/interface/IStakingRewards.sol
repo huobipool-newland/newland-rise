@@ -14,4 +14,6 @@ interface IStakingRewards {
     function getPid(address stakingToken) external returns(uint);
 
     function getRewardToken() external returns(address);
+
+    function poolLength() external view returns (uint256);
 }

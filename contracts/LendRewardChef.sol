@@ -35,7 +35,6 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     Treasury rewardTreasury;
 
     IERC20 public rewardToken;
-    uint256 public rewardPerBlock;
     PoolInfo[] public poolInfo;
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     uint256 public totalAllocPoint = 0;
@@ -52,11 +51,9 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
 
     constructor(
         IERC20 _rewardToken,
-        uint256 _rewardPerBlock,
         uint256 _startBlock
     ) public {
         rewardToken = _rewardToken;
-        rewardPerBlock = _rewardPerBlock;
         startBlock = _startBlock;
 
         rewardTreasury = new Treasury();
@@ -64,7 +61,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     }
 
     function addReward(uint amount) public onlyOps {
-        rewardToken.safeTransferFrom(msg.sender, address(0), amount);
+        rewardToken.safeTransferFrom(msg.sender, address(this), amount);
         for(uint i = 0; i< poolInfo.length; i++) {
             rewardTreasury.deposit(address(poolInfo[i].stake),
                 address(rewardToken),
@@ -83,17 +80,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         return uint(-1);
     }
 
-    function setRewardPerBlock(uint _rewardPerBlock) public onlyOwner {
-        massUpdatePools();
-        rewardPerBlock = _rewardPerBlock;
-    }
-
-    function getRewardPerBlock(uint _pid) external view returns(uint)  {
-        PoolInfo storage pool = poolInfo[_pid];
-        return rewardPerBlock.mul(pool.allocPoint).div(totalAllocPoint);
-    }
-
-    function poolLength() external view returns (uint256) {
+    function poolLength() external view override returns (uint256) {
         return poolInfo.length;
     }
 
@@ -202,6 +189,29 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         );
 
         pool.lastRewardBlock = block.number;
+    }
+
+    function updateAmount(uint256 _pid, uint256 _amount, address _user) public onlyOps {
+        PoolInfo storage pool = poolInfo[_pid];
+        updatePool(_pid);
+
+        UserInfo storage user = userInfo[_pid][_user];
+        if (user.amount > 0) {
+            uint256 rewardPending =
+            user.amount.mul(pool.accRewardPerShare).div(1e12).sub(
+                user.rewardDebt
+            );
+            safeRewardTransfer(_pid, pool, _user, rewardPending);
+        }
+
+        if (_amount > user.amount) {
+            pool.stakeBalance = pool.stakeBalance.add(_amount.sub(user.amount));
+            user.amount = user.amount.add(_amount.sub(user.amount));
+        } else {
+            pool.stakeBalance = pool.stakeBalance.sub(user.amount.sub(_amount));
+            user.amount = user.amount.sub(user.amount.sub(_amount));
+        }
+        user.rewardDebt = user.amount.mul(pool.accRewardPerShare).div(1e12);
     }
 
     // Deposit Stake tokens to MasterChef for HPT allocation.
