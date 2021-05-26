@@ -22,4 +22,4 @@ ${JSON.stringify(require(abiHome + `${name}_fl.sol/${name}.json`).abi)}
 `;
 }
 
-fs.writeFileSync('../README.md', doc)
+fs.writeFileSync(process.cwd() + '/README.md', doc)
