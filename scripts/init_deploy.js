@@ -33,7 +33,7 @@ async function main() {
     }
 
     let bank = await $deploy('Bank')
-    let cLendbridge = await $deploy('CLendbridge', bank.address, address0, address0, HPT) // todo
+    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, address0, HPT) // todo
     let model = await $deploy('CLendInterestModel', cLendbridge.address, '100000000000000000')
     let config = await $deploy('BankConfig')
 

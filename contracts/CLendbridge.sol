@@ -17,7 +17,7 @@ contract CLendbridge is ILendbridge, Ownable {
     address public claimContract;
     address public HPT;
 
-    mapping(address => ICToken) cTokens;
+    mapping(address => address) cTokens;
 
     modifier onlyBank() {
         require(msg.sender == address(bank), 'only bank');
@@ -31,12 +31,13 @@ contract CLendbridge is ILendbridge, Ownable {
         HPT = _hpt;
     }
 
-    function setCToken(address erc20, ICToken _cToken) public onlyOwner {
+    function setCToken(address erc20, address _cToken) public onlyOwner {
         cTokens[erc20] = _cToken;
+        cTokens[_cToken] = erc20;
     }
 
     function loanAndDeposit(address erc20, uint amt) public override onlyBank {
-        ICToken cToken = cTokens[erc20];
+        ICToken cToken = ICToken(cTokens[erc20]);
         require(address(cToken) != address(0), 'cToken not support');
 
         cToken.borrow(amt);
@@ -57,7 +58,7 @@ contract CLendbridge is ILendbridge, Ownable {
             erc20.safeTransfer(owner(), erc20Amt);
         }
 
-        ICToken cToken = cTokens[erc20];
+        ICToken cToken = ICToken(cTokens[erc20]);
         if (address(cToken) != address(0)) {
             uint nErc20Amt = nErc20.myBalance();
             if (nAmt > nErc20Amt) {
@@ -73,15 +74,30 @@ contract CLendbridge is ILendbridge, Ownable {
     }
 
     function mintCollateral(address erc20, uint mintAmount) external onlyOwner {
-        ICToken cToken = cTokens[erc20];
+        ICToken cToken = ICToken(cTokens[erc20]);
         require(address(cToken) != address(0), 'cToken not support');
+
+        uint eBalance = erc20.myBalance();
+        if (mintAmount > eBalance) {
+            mintAmount = eBalance;
+        }
 
         erc20.safeApprove(address(cToken), mintAmount);
         cToken.mint(mintAmount);
     }
 
+    function redeemCollateral(address cToken, uint cAmt) external onlyOwner {
+        uint cBalance = cToken.myBalance();
+        if (cAmt > cBalance) {
+            cAmt = cBalance;
+        }
+        ICToken(cToken).redeem(cAmt);
+
+        cTokens[cToken].safeTransfer(owner(), cTokens[cToken].myBalance());
+    }
+
     function getInterestRate(address erc20) public view override returns(uint) {
-        ICToken cToken = cTokens[erc20];
+        ICToken cToken = ICToken(cTokens[erc20]);
         if (address(cToken) == address(0)) {
             return 0;
         }
@@ -96,7 +112,7 @@ contract CLendbridge is ILendbridge, Ownable {
     // claim dep
     function claim() public override onlyBank returns(address, uint) {
         bytes4 methodId = bytes4(keccak256("claim(address)"));
-        (bool success,) = claimContract.call(abi.encodeWithSelector(methodId, rewardToken));
+        (bool success,) = claimContract.call(abi.encodeWithSelector(methodId, address(this)));
         require(success, 'claim CLendbridge failed');
         uint rewardAmt = rewardToken.myBalance();
         rewardToken.safeTransfer(address(bank), rewardAmt);

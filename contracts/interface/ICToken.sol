@@ -10,4 +10,6 @@ interface ICToken {
     function borrowRatePerBlock() external view returns (uint);
 
     function mint(uint mintAmount) external returns (uint);
+
+    function redeem(uint redeemTokens) external returns (uint);
 }
