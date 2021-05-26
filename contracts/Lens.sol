@@ -167,8 +167,6 @@ contract Lens {
 
 
     function userPostions(uint posId) internal view returns (PositionInfo memory){
-
-
         (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
 
         (,,,address goblin,,,,,) = bankContract.productions(prodId);
@@ -416,8 +414,7 @@ contract Lens {
     }
 
     function getAllUserPos() public view returns (PositionInfo[] memory){
-
-        uint positionsCount = bankContract.currentPid() - 1;
+        uint positionsCount = bankContract.currentPos() - 1;
 
         PositionInfo[] memory positionInfos = new PositionInfo[](positionsCount);
         for (uint i = 0; i < positionsCount; i++) {
@@ -428,10 +425,8 @@ contract Lens {
 
     }
 
-
     function getAllUserPosIds() public view returns (uint[] memory){
-        uint positionsCount = bankContract.currentPid() - 1;
-
+        uint positionsCount = bankContract.currentPos() - 1;
         uint[] memory positionInfos = new uint[](positionsCount);
         for (uint i = 0; i < positionsCount; i++) {
             PositionInfo memory info = userPostions(i + 1);

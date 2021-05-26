@@ -33,14 +33,9 @@ async function main() {
     let cPosition = await bankAddress.$currentPos()
     console.log("currentPosition: " + cPosition)
     await bankAddress.$connect(signer).$opPosition(0,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
-
+    console.log("currentPosition: " + (await bankAddress.$currentPos()))
     await bankAddress.$connect(signer).$claim(cPosition);
     await bankAddress.$connect(signer).$claimAll();
-    try {
-        await bankAddress.$connect(signer).$claimLendbridge();
-    } catch (e) {
-        console.log(e)
-    }
 }
 
 main()
