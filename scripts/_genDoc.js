@@ -17,7 +17,7 @@ ${args}
 \`\`\`  
 - 合约ABI
 \`\`\`
-${JSON.stringify(require(abiHome + `${name}_fl.sol/${name}.json`).abi)}
+${JSON.stringify(require(abiHome + `${name}.sol/${name}.json`).abi)}
 \`\`\`        
 `;
 }

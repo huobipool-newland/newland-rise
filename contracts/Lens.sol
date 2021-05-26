@@ -386,9 +386,9 @@ contract Lens {
        
         // 3. Convert the position's LP tokens to the underlying assets.
         uint256 userToken0 = lpBalance.mul(totalAmount0).div(lpSupply);
-        uint256 priceToken0 = getPriceInUsd(pair.token0()).mul(1e18).div(ERC20(pair.token0()).decimals());
+        uint256 priceToken0 = getPriceInUsd(pair.token0()).mul(1e18).div(10 ** uint(ERC20(pair.token0()).decimals()));
         uint256 userToken1 = lpBalance.mul(totalAmount1).div(lpSupply);
-        uint256 priceToken1 = getPriceInUsd(pair.token1()).mul(1e18).div(ERC20(pair.token1()).decimals());
+        uint256 priceToken1 = getPriceInUsd(pair.token1()).mul(1e18).div(10 ** uint(ERC20(pair.token1()).decimals()));
 
         uint256 lpValue = userToken0.mul(priceToken0).add(userToken1.mul(priceToken1));
         return (lpValue.div(1e18), userToken0, userToken1);
