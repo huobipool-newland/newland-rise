@@ -9,8 +9,8 @@ async function main() {
     const infoAll =  await lensContract.$infoAll();
     console.log(infoAll);
 
-    console.log(await bank.$getUserPositions('0xAf4cBbDdd17D1fdAD956663a54eE8960De231348'))
-    const userAll =  await lensContract.$userAll('0xAf4cBbDdd17D1fdAD956663a54eE8960De231348');
+    //console.log(await bank.$getUserPositions('0x831f6b2a293af9d5c8a6649dd42cc2f6efc2fe96'))
+    const userAll =  await lensContract.$userAll('0x831f6b2a293af9d5c8a6649dd42cc2f6efc2fe96');
     console.log(userAll);
 }
 

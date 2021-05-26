@@ -383,14 +383,15 @@ contract Lens {
         // 2. Get the pool's total supply of token0 and token1.
         (uint256 totalAmount0, uint256 totalAmount1,) = pair.getReserves();
 
+       
         // 3. Convert the position's LP tokens to the underlying assets.
         uint256 userToken0 = lpBalance.mul(totalAmount0).div(lpSupply);
-        uint256 priceToken0 = getPriceInUsd(pair.token0());
+        uint256 priceToken0 = getPriceInUsd(pair.token0()).mul(1e18).div(ERC20(pair.token0()).decimals());
         uint256 userToken1 = lpBalance.mul(totalAmount1).div(lpSupply);
-        uint256 priceToken1 = getPriceInUsd(pair.token1());
+        uint256 priceToken1 = getPriceInUsd(pair.token1()).mul(1e18).div(ERC20(pair.token1()).decimals());
 
         uint256 lpValue = userToken0.mul(priceToken0).add(userToken1.mul(priceToken1));
-        return (lpValue, userToken0, userToken1);
+        return (lpValue.div(1e18), userToken0, userToken1);
     }
 
     function calculateRisk(uint256 debtValue, uint256 lpValue) public view returns (uint256){
