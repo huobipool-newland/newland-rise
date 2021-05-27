@@ -18,6 +18,7 @@ contract CLendbridge is ILendbridge, Ownable {
     address public HPT;
 
     mapping(address => address) cTokens;
+    mapping(address => address) erc20s;
 
     modifier onlyBank() {
         require(msg.sender == address(bank), 'only bank');
@@ -33,7 +34,7 @@ contract CLendbridge is ILendbridge, Ownable {
 
     function setCToken(address erc20, address _cToken) public onlyOwner {
         cTokens[erc20] = _cToken;
-        cTokens[_cToken] = erc20;
+        erc20s[_cToken] = erc20;
     }
 
     function loanAndDeposit(address erc20, uint amt) public override onlyBank {
@@ -93,7 +94,7 @@ contract CLendbridge is ILendbridge, Ownable {
         }
         ICToken(cToken).redeem(cAmt);
 
-        cTokens[cToken].safeTransfer(owner(), cTokens[cToken].myBalance());
+        erc20s[cToken].safeTransfer(owner(), erc20s[cToken].myBalance());
     }
 
     function getInterestRate(address erc20) public view override returns(uint) {
