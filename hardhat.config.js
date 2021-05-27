@@ -46,5 +46,8 @@ module.exports = {
       gasPrice: 1.3 * 1000000000,
       allowUnlimitedContractSize: true
     }
+  },
+  mocha: {
+    timeout: 2000000,
   }
 };

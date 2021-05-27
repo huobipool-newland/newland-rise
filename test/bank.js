@@ -45,6 +45,7 @@ describe("BANK", function() {
         console.log("currentPosition: " + cPosition)
         await bankAddress.$connect(signer).$opPosition(0,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
         console.log("currentPosition: " + (await bankAddress.$currentPos()))
+        await $evmGoSec(100)
         await bankAddress.$connect(signer).$claim(cPosition);
         await bankAddress.$connect(signer).$claimAll();
     });

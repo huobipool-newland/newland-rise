@@ -167,6 +167,11 @@ function opRemoveData(removeSrategyAddress, token0Address, token1Address, whichW
         removeSrategyAddress, data )
 }
 
+async function evmGoSec(seconds) {
+    console.log('\x1B[32m%s\x1B[39m', "#evm_increaseTime " + seconds)
+    return await ethers.provider.send("evm_increaseTime", [seconds])
+}
+
 
 global.$deploy = deploy
 global.$getAddress = getAddress
@@ -177,5 +182,6 @@ global.$opRemoveData = opRemoveData
 global.$opDataDecode = opDataDecode
 global.$encodeParams = encodeParams
 global.$decodeParams = decodeParams
+global.$evmGoSec = evmGoSec
 
 
