@@ -7,6 +7,7 @@ import "./library/SafeToken.sol";
 import "./interface/ILendbridge.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./library/StrUtil.sol";
 
 contract CLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
@@ -41,10 +42,11 @@ contract CLendbridge is ILendbridge, Ownable {
         ICToken cToken = ICToken(cTokens[erc20]);
         require(address(cToken) != address(0), 'cToken not support');
 
-        cToken.borrow(amt);
+        uint error = cToken.borrow(amt);
+        require(error == 0, string(abi.encodePacked('newland.borrow failed ', StrUtil.uint2str(error))));
 
         uint erc20Amt = erc20.myBalance();
-        require(erc20Amt >= amt, 'borrow from newland failed');
+        require(erc20Amt >= amt, 'newland.borrow failed');
         if (erc20Amt > amt) {
             erc20.safeTransfer(owner(), erc20Amt - amt);
         }
@@ -70,7 +72,8 @@ contract CLendbridge is ILendbridge, Ownable {
             }
 
             bank.withdraw(erc20, nAmt);
-            cToken.repayBorrow(erc20.myBalance());
+            uint error = cToken.repayBorrow(erc20.myBalance());
+            require(error == 0, string(abi.encodePacked('newland.repayBorrow failed ', StrUtil.uint2str(error))));
         }
     }
 
@@ -84,7 +87,8 @@ contract CLendbridge is ILendbridge, Ownable {
         }
 
         erc20.safeApprove(address(cToken), mintAmount);
-        cToken.mint(mintAmount);
+        uint error = cToken.mint(mintAmount);
+        require(error == 0, string(abi.encodePacked('newland.mint failed ', StrUtil.uint2str(error))));
     }
 
     function redeemCollateral(address cToken, uint cAmt) external onlyOwner {
@@ -92,7 +96,8 @@ contract CLendbridge is ILendbridge, Ownable {
         if (cAmt > cBalance) {
             cAmt = cBalance;
         }
-        ICToken(cToken).redeem(cAmt);
+        uint error = ICToken(cToken).redeem(cAmt);
+        require(error == 0, string(abi.encodePacked('newland.redeem failed ', StrUtil.uint2str(error))));
 
         erc20s[cToken].safeTransfer(owner(), erc20s[cToken].myBalance());
     }

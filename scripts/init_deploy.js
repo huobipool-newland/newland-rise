@@ -13,6 +13,9 @@ let WHT_USD = '0x8EC213E7191488C7873cEC6daC8e97cdbAdb7B35'
 
 let address0 = '0x0000000000000000000000000000000000000000'
 
+let C_USDT = '0x72E1C21ed4774Cd14AA29d15fdF52abF1b25598e'
+let C_HUSD = '0x3006E211f6F037f2Bbfc69402d122E49Cd74b186'
+
 async function main() {
     let lendChef = await $deploy('LendRewardChef',
         DEP, //dep
@@ -32,6 +35,11 @@ async function main() {
 
     let bank = await $deploy('Bank')
     let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, address0, HPT) // todo
+    if (cLendbridge.$isNew) {
+        await cLendbridge.$setCToken(USDT, C_USDT);
+        await cLendbridge.$setCToken(HUSD, C_HUSD);
+    }
+
     let model = await $deploy('CLendInterestModel', cLendbridge.address, '100000000000000000')
     let config = await $deploy('BankConfig')
 
