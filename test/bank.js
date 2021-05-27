@@ -5,6 +5,8 @@ const usdt = "0xa71edc38d189767582c38a3145b5873052c3e47a";
 const husd = "0x0298c2b32eae4da002a15f36fdf7615bea3da047";
 let erc20Artifact = '@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20'
 let signer;
+let MDX = '0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c'
+let MDX_C
 
 describe("BANK", function() {
     before('INIT SIGNER',async () => {
@@ -20,6 +22,8 @@ describe("BANK", function() {
         console.log('Balance: ' + (await signer.getBalance()).toString());
         console.log('USDT: ' + (await usdtA.balanceOf(signer.getAddress())).toString() + ' ' + (await usdtA.decimals()));
         console.log('HUSD: ' + (await husdA.balanceOf(signer.getAddress())).toString() + ' ' + (await husdA.decimals()));
+
+        MDX_C = await ethers.getContractAt(erc20Artifact,MDX);
     });
     it('DEPOSIT', async () => {
         const bankAddress = await $getContract('Bank');
@@ -46,7 +50,9 @@ describe("BANK", function() {
         await bankAddress.$connect(signer).$opPosition(0,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
         console.log("currentPosition: " + (await bankAddress.$currentPos()))
         await $evmGoSec(100)
+
+        let mdxBefore = await MDX_C.balanceOf(signer.getAddress())
         await bankAddress.$connect(signer).$claim(cPosition);
-        await bankAddress.$connect(signer).$claimAll();
+        console.log("claim MDX: " + ((await MDX_C.balanceOf(signer.getAddress())) - mdxBefore))
     });
 });
