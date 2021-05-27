@@ -13,6 +13,11 @@ import "./interface/ILendbridge.sol";
 import "./interface/IBank.sol";
 import "./interface/IStakingRewards.sol";
 
+interface ILendRewardChef {
+    function updateAmount(uint256 _pid, uint256 _amount, address _user) external;
+    function addReward(uint amount) external;
+}
+
 contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     using SafeToken for address;
     using SafeMath for uint256;
@@ -353,9 +358,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         if (address(lendRewardChef) != address(0)) {
             uint lendChefPid = lendRewardChef.getPid(production.borrowToken);
             if (lendChefPid < uint(-1)) {
-                bytes4 methodId = bytes4(keccak256("updateAmount(uint256,uint256,address)"));
-                (bool success,) = address(lendRewardChef).call(abi.encodeWithSelector(methodId, lendChefPid, debtVal, pos.owner));
-                require(success, 'lendRewardChef updateAmount failed');
+                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, debtVal, pos.owner);
             }
         }
     }
@@ -478,9 +481,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     function _claimLendbridge() internal returns(address, uint){
         (address token, uint claimAmt) = lendbridge.claim();
         token.safeApprove(address(lendRewardChef), claimAmt);
-        bytes4 methodId = bytes4(keccak256("addReward(uint)"));
-        (bool success,) = address(lendRewardChef).call(abi.encodeWithSelector(methodId, claimAmt));
-        require(success, 'lendRewardChef addReward failed');
+        ILendRewardChef(address(lendRewardChef)).addReward(claimAmt);
         return (token, claimAmt);
     }
 
