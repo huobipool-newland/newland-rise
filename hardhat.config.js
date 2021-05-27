@@ -1,5 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 // require('hardhat-contract-sizer');
+require("./scripts/_runUtil.js");
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -26,6 +27,7 @@ module.exports = {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
       },
       blockGasLimit: 900000000000000,
+      gasPrice: 1.3 * 1000000000,
       allowUnlimitedContractSize: true
     },
     heco: {
@@ -33,6 +35,7 @@ module.exports = {
       accounts: {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
       },
+      gasPrice: 1.3 * 1000000000,
       allowUnlimitedContractSize: true
     },
     hecoTest: {
@@ -40,6 +43,7 @@ module.exports = {
       accounts: {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"
       },
+      gasPrice: 1.3 * 1000000000,
       allowUnlimitedContractSize: true
     }
   }
