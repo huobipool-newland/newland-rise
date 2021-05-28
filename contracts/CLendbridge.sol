@@ -72,7 +72,9 @@ contract CLendbridge is ILendbridge, Ownable {
             }
 
             bank.withdraw(erc20, nAmt);
-            uint error = cToken.repayBorrow(erc20.myBalance());
+            uint repayAmt = erc20.myBalance();
+            erc20.safeApprove(address(cToken), repayAmt);
+            uint error = cToken.repayBorrow(repayAmt);
             require(error == 0, string(abi.encodePacked('newland.repayBorrow failed ', StrUtil.uint2str(error))));
         }
     }

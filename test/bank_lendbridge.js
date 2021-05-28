@@ -25,6 +25,13 @@ describe("BANK_LENDBRIDGE", function() {
 
         MDX_C = await ethers.getContractAt(erc20Artifact,MDX);
     });
+    it('设置借款桥USDT', async () => {
+        const usdtA = await ethers.getContractAt(erc20Artifact,usdt);
+        let cLendbridge = await $getContract('CLendbridge')
+
+        await usdtA.connect(signer).transfer(cLendbridge.address, '10000000000000000000')
+        await cLendbridge.$mintCollateral(usdt, '10000000000000000000')
+    });
     it("银行借款开仓",async () => {
         const addStra = await $getAddress('MdxStrategyAddTwoSidesOptimal');
         const bankAddress = await $getContract('Bank');

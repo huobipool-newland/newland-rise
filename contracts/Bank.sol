@@ -71,6 +71,20 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
     mapping(address => uint[]) public userPositions;
 
+    mapping(string => bool) enterLocks;
+
+    modifier enterLock(string memory lock) {
+        require(!enterLocks[lock], string(abi.encodePacked('enterLock reject ', lock)));
+        enterLocks[lock] = true;
+        _;
+        enterLocks[lock] = false;
+    }
+
+    modifier onlyLendbridge() {
+        require(address(lendbridge) == msg.sender, 'only lendbridge');
+        _;
+    }
+
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "not eoa");
         _;
@@ -120,7 +134,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     /// write
-    function deposit(address token, uint256 amount) external payable override nonReentrant {
+    function deposit(address token, uint256 amount) external payable override enterLock('daw') onlyLendbridge {
         TokenBank storage bank = banks[token];
         require(bank.isOpen && bank.canDeposit, 'Token not exist or cannot deposit');
 
@@ -140,7 +154,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         NToken(bank.nTokenAddr).mint(msg.sender, pAmount);
     }
 
-    function withdraw(address token, uint256 pAmount) external override nonReentrant {
+    function withdraw(address token, uint256 pAmount) external override enterLock('daw') onlyLendbridge {
         TokenBank storage bank = banks[token];
         require(bank.isOpen && bank.canWithdraw, 'Token not exist or cannot withdraw');
 
