@@ -140,7 +140,7 @@
 ```        
 
 #### Lens
-- 合约地址 0x35BfeC23B494d6fcca3A6add71120916e4d86364     
+- 合约地址 0xA2C308dC12c8F2F0f6dAd95704EDC6f9999B6aC9     
 - 初始化参数
 ```
 [0xD9907e90ff1744B5EC30E6974b1C35d3A1E76Cae,
