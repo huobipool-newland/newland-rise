@@ -38,42 +38,44 @@ describe("lens", function() {
         const lensContract = await $deploy('Lens',bank.address, oracle.address);
 
 
-        //deposit
-        const bankAddress = await $getContract('Bank');
-        const usdtA = await ethers.getContractAt(erc20Artifact,usdt);
+        // //deposit
+        // const bankAddress = await $getContract('Bank');
+        // const usdtA = await ethers.getContractAt(erc20Artifact,usdt);
 
-        //approve bank
-        await usdtA.connect(signer).approve(bankAddress.address,"3000000000000000000");
+        // //approve bank
+        // await usdtA.connect(signer).approve(bankAddress.address,"3000000000000000000");
 
-        //deposit
-        console.log("Bank USDT: " + (await bankAddress.banks(usdt)).totalVal.toString());
-        await bankAddress.$connect(signer).$deposit(usdt,"3000000000000000000");
-        console.log("Bank USDT: " + (await bankAddress.banks(usdt)).totalVal.toString());
+        // //deposit
+        // console.log("Bank USDT: " + (await bankAddress.banks(usdt)).totalVal.toString());
+        // await bankAddress.$connect(signer).$deposit(usdt,"3000000000000000000");
+        // console.log("Bank USDT: " + (await bankAddress.banks(usdt)).totalVal.toString());
     
 
 
-        const infoAll =  await lensContract.$infoAll();
-        console.log(infoAll[0][0].tokenAddr.toString());
-        console.log(infoAll[0][0].totalVal.toString());
-        console.log(infoAll[1].toString());
+        // const infoAll =  await lensContract.$infoAll();
+        // console.log(infoAll[0][0].tokenAddr.toString());
+        // console.log(infoAll[0][0].totalVal.toString());
+        // console.log(infoAll[1].toString());
 
-        //opPosition
-        const addStra = await $getAddress('MdxStrategyAddTwoSidesOptimal');
-        const husdA = await ethers.getContractAt(erc20Artifact,husd);
+        // //opPosition
+        // const addStra = await $getAddress('MdxStrategyAddTwoSidesOptimal');
+        // const husdA = await ethers.getContractAt(erc20Artifact,husd);
 
-        //approve strategy
-        await husdA.connect(signer).approve(addStra,"100000000");
+        // //approve strategy
+        // await husdA.connect(signer).approve(addStra,"100000000");
 
-        let cPosition = await bankAddress.$currentPos()
-        console.log("currentPosition: " + cPosition)
-        await bankAddress.$connect(signer).$opPosition(0,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
-        console.log("currentPosition: " + (await bankAddress.$currentPos()))
+        // let cPosition = await bankAddress.$currentPos()
+        // console.log("currentPosition: " + cPosition)
+        // await bankAddress.$connect(signer).$opPosition(0,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
+        // console.log("currentPosition: " + (await bankAddress.$currentPos()))
 
 
 
 
         //console.log(await bank.$getUserPositions('0x831f6b2a293af9d5c8a6649dd42cc2f6efc2fe96'))
         //check lens
+        const posAll = await lensContract.$getAllUserPos();
+        console.log(posAll.toString());
         const userAll =  await lensContract.$userAll(impersonateAccount);
         console.log(userAll[0].toString());
     });

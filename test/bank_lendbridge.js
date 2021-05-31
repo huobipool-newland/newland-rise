@@ -45,4 +45,21 @@ describe("BANK_LENDBRIDGE", function() {
         await bankAddress.$connect(signer).$opPosition(0,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
         console.log("currentPosition: " + (await bankAddress.$currentPos()))
     });
+    it("加仓",async () => {
+        const addStra = await $getAddress('MdxStrategyAddTwoSidesOptimal');
+        const bankAddress = await $getContract('Bank');
+        const husdA = await ethers.getContractAt(erc20Artifact,husd);
+
+        const lens = await $getContract('Lens');
+
+        //approve strategy
+        await husdA.connect(signer).approve(addStra,"100000000");
+
+        let cPosition = await bankAddress.$currentPos()
+        console.log("currentPosition: " + cPosition)
+        console.log(await lens.userPosition(cPosition));
+        
+        await bankAddress.$connect(signer).$opPosition(cPosition,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
+        console.log("currentPosition: " + (await bankAddress.$currentPos()))
+    });
 });
