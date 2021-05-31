@@ -55,6 +55,7 @@ describe("lens", function() {
         const infoAll =  await lensContract.$infoAll();
         console.log(infoAll[0][0].tokenAddr.toString());
         console.log(infoAll[0][0].totalVal.toString());
+        console.log(infoAll[1].toString());
 
         //opPosition
         const addStra = await $getAddress('MdxStrategyAddTwoSidesOptimal');

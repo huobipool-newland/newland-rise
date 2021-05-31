@@ -337,7 +337,7 @@ contract Lens {
             hptYield = hptPerBlock * blocksPerYear * hptInUsd / poolValueLocked;
         }
 
-        return (lpToken, poolValueLocked, baseYield, hptYield);
+        return (lpToken, poolValueLocked, baseYield / 1e14, hptYield / 1e14);
     }
 
     function getUserRewardInfo(address goblin, address owner) public view returns (uint, uint){
