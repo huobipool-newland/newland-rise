@@ -10,7 +10,7 @@ import "./interface/IBankConfig.sol";
 import "./interface/Goblin.sol";
 import "./interface/IMdexPair.sol";
 import "./PriceOracle.sol";
-// import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 
 interface ChefLensInterface {
@@ -101,6 +101,8 @@ contract Lens {
     struct PositionInfo {
         uint256 posId;
         uint256 prodId;
+        address borrowToken;
+        uint256 debtAmount;
         uint256 debtValue;
         uint256 healthAmount;
         uint256 lpAmount;
@@ -127,15 +129,13 @@ contract Lens {
     }
 
     function infoAll() public view returns (BankTokenMetadata[] memory, ProductionMetadata[] memory){
-        //console.log(address(bankContract));
         address[] memory tokensAddr = bankContract.getBankTokens();
         uint tokenCount = tokensAddr.length;
-        //console.log(tokenCount);
+        
         BankTokenMetadata[] memory banks = new BankTokenMetadata[](tokenCount);
         for (uint i = 0; i < tokenCount; i++) {
             banks[i] = bankTokenMetadata(tokensAddr[i]);
         }
-        //console.log("currentPid: %s",bankContract.currentPid());
         ProductionMetadata[] memory prods = new ProductionMetadata[](bankContract.currentPid() - 1);
         for (uint i = 1; i < bankContract.currentPid(); i++) {
             prods[i - 1] = prodsMetadata(i);
@@ -167,27 +167,28 @@ contract Lens {
 
 
     function userPostions(uint posId) internal view returns (PositionInfo memory){
-        (uint256 prodId, uint256 healthAmount, uint256 debtValue,address owner) = bankContract.positionInfo(posId);
+        (uint256 prodId, uint256 healthAmount, uint256 debtAmount,address owner) = bankContract.positionInfo(posId);
 
-        (,,,address goblin,,,,,) = bankContract.productions(prodId);
+        (address borrowToken,,,address goblin,,,,,) = bankContract.productions(prodId);
         uint256 lpAmount = GoblinLensInterface(goblin).posLPAmount(posId);
-
+        
         (uint256 lpValue,uint256 token0Amount,uint256 token1Amount) = getUserLpInfo(goblin, lpAmount);
+        
 
         (uint256 mdxReward,uint256 hptReward) = getUserRewardInfo(goblin, owner);
-
-        uint256 risk = calculateRisk(debtValue, lpValue);
 
         return PositionInfo({
             posId : posId,
             prodId : prodId,
-            debtValue : debtValue,
+            borrowToken: borrowToken,
+            debtAmount : debtAmount,
+            debtValue : debtAmount.mul(getPriceInUsd(borrowToken)).div(10 ** uint(ERC20(borrowToken).decimals())),
             healthAmount : healthAmount,
             lpAmount : lpAmount,
             lpValue : lpValue,
             token0Amount : token0Amount,
             token1Amount : token1Amount,
-            risk : risk,
+            risk : calculateRisk(prodId,debtAmount, healthAmount),
             mdxReward : mdxReward,
             hptReward : hptReward
             });
@@ -394,13 +395,24 @@ contract Lens {
         return (lpValue.div(1e18), userToken0, userToken1);
     }
 
-    function calculateRisk(uint256 debtValue, uint256 lpValue) public view returns (uint256){
+    function calculateRisk(uint256 prodId,uint256 debtValue, uint256 lpValue) public view returns (uint256){
+        //console.log(debtValue);
+        //console.log(lpValue);
+
+        if(debtValue == 0 || lpValue == 0){
+            return uint(0);
+        }
+
+        (,,,,,,uint256 liquidateFactor,,) = bankContract.productions(prodId);
 
         //借贷率 = 借款/总资产
         //风险值 = 借贷率/0.85
-        uint256 liqBps = bankContract.config().getLiquidateBps();
-        uint256 loanRate = debtValue.div(lpValue);
-        uint256 risk = loanRate.div(liqBps);
+        //uint256 liqBps = bankContract.config().getLiquidateBps();
+        //console.log(liquidateFactor);
+        uint256 loanRate = debtValue.mul(10000).div(lpValue);
+        //console.log(loanRate);
+        uint256 risk = loanRate.mul(100).div(liquidateFactor);
+        //console.log(risk);
         return risk;
     }
 
