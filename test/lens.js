@@ -24,9 +24,16 @@ describe("lens", function() {
 
         MDX_C = await ethers.getContractAt(erc20Artifact,MDX);
     });
+    it('清算池列表', async () => {
+        const bank = await $getContract('Bank');
+        const oracle = await $getContract('PriceOracle');
+        const lensContract = await $deploy('Lens',bank.address, oracle.address);
+
+        console.log(await lensContract.$getAllUserPos())
+    });
     it("test1", async function() {
-        const bank = await $getContract('Bank', 128);
-        const oracle = await $getContract('PriceOracle', 128);
+        const bank = await $getContract('Bank');
+        const oracle = await $getContract('PriceOracle');
 
         const lensContract = await $deploy('Lens',bank.address, oracle.address);
 
