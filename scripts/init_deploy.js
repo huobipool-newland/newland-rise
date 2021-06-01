@@ -41,7 +41,6 @@ async function main() {
     }
 
     let model = await $deploy('CLendInterestModel', cLendbridge.address, '100000000000000000')
-    let config = await $deploy('BankConfig')
 
     let chef = await $deploy('MdexStakingChef',
         '0xe499ef4616993730ced0f31fa2703b92b50bb536', //hpt
@@ -86,6 +85,7 @@ async function main() {
         await goblin.$setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
         await chef.$setOps(goblin.address, true)
     }
+    let config = await $deploy('BankConfig')
     if (config.$isNew) {
         await config.$setParams(2000, 800, model.address);
     }
@@ -101,7 +101,10 @@ async function main() {
         await lendChef.$setOps(bank.address, true)
     }
 
-    await $deploy('Lens', bank.address, priceOracle.address);
+    let lens = await $deploy('Lens', bank.address, priceOracle.address);
+    if (lens.$isNew) {
+        await lens.$setStrategyInfo(goblin.address, mdxAddStrategy.address, mdxWithdrawStrategy.address);
+    }
 }
 
 main()

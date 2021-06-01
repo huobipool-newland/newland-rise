@@ -123,9 +123,25 @@ contract Lens {
         uint256 reward;
     }
 
+    struct StrategyInfo {
+        address add;
+        address withdraw;
+    }
+    mapping(address => StrategyInfo) strategyInfos;
+
     constructor(Bank bank, PriceOracle oracle) public {
         bankContract = bank;
         priceOracle = oracle;
+    }
+
+    function setStrategyInfo(address goblin, address add, address withdraw) public {
+        StrategyInfo storage info =  strategyInfos[goblin];
+        info.add = add;
+        info.withdraw = withdraw;
+    }
+
+    function getStrategyInfo(address goblin) public view returns(address, address) {
+        return (strategyInfos[goblin].add, strategyInfos[goblin].withdraw);
     }
 
     function infoAll() public view returns (BankTokenMetadata[] memory, ProductionMetadata[] memory){
