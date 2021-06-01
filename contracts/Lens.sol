@@ -87,6 +87,7 @@ contract Lens {
         bool isOpen;
         bool canBorrow;
         uint256 group;
+        address goblin;
 
         uint256 minDebt;   //最小借款额
         uint256 openFactor;   //最高开仓倍数
@@ -323,6 +324,7 @@ contract Lens {
             isOpen : isOpen,
             canBorrow : canBorrow,
             group : group,
+            goblin: goblin,
             minDebt : minDebt,
             openFactor : openFactor,
             liquidateFactor : liquidateFactor,
