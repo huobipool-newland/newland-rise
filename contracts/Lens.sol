@@ -182,7 +182,7 @@ contract Lens {
     }
 
 
-    function userPostions(uint posId) internal view returns (PositionInfo memory){
+    function userPostions(uint posId) public view returns (PositionInfo memory){
         (uint256 prodId, uint256 healthAmount, uint256 debtAmount,address owner) = bankContract.positionInfo(posId);
 
         (address borrowToken,,,address goblin,,,,,) = bankContract.productions(prodId);

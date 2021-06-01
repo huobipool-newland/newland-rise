@@ -56,10 +56,10 @@ describe("BANK_LENDBRIDGE", function() {
         await husdA.connect(signer).approve(addStra,"100000000");
 
         let cPosition = await bankAddress.$currentPos()
-        console.log("currentPosition: " + cPosition)
-        console.log(await lens.userPosition(cPosition));
-        
-        await bankAddress.$connect(signer).$opPosition(cPosition,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
+        console.log("currentPosition: " + cPosition-1)
+        console.log(await lens.$userPostions(cPosition-1));
+
+        await bankAddress.$connect(signer).$opPosition(cPosition-1,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
         console.log("currentPosition: " + (await bankAddress.$currentPos()))
     });
 });
