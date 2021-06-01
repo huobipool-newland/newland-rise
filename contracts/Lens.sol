@@ -368,8 +368,8 @@ contract Lens {
         uint256 hptRewardTotal = chefLens.hptRewardTotal();
         uint256 mdxRewardTotal = chefLens.mdxRewardTotal();
 
-        uint256 totalAccuRewards = hptRewardTotal.mul(getPriceInUsd(hpt));
-        totalAccuRewards = totalAccuRewards.add(mdxRewardTotal.mul(getPriceInUsd(mdx)));
+        uint256 totalAccuRewards = hptRewardTotal.mul(getPriceInUsd(hpt)).div(1e18);
+        totalAccuRewards = totalAccuRewards.add(mdxRewardTotal.mul(getPriceInUsd(mdx)).div(1e18));
 
         return totalAccuRewards;
 
