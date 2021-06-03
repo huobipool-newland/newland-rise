@@ -84,6 +84,8 @@ async function main() {
     if (goblin.$isNew) {
         await goblin.$setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
         await chef.$setOps(goblin.address, true)
+        await goblin.$setSwapPath(USDT, [MDX, USDT]);
+        await goblin.$setSwapPath(HUSD, [MDX, HUSD]);
     }
     let config = await $deploy('BankConfig')
     if (config.$isNew) {
