@@ -98,8 +98,10 @@ contract CLendbridge is ILendbridge, Ownable {
         if (cAmt > cBalance) {
             cAmt = cBalance;
         }
-        uint error = ICToken(cToken).redeem(cAmt);
-        require(error == 0, string(abi.encodePacked('newland.redeem failed ', StrUtil.uint2str(error))));
+        if (cAmt > 0) {
+            uint error = ICToken(cToken).redeem(cAmt);
+            require(error == 0, string(abi.encodePacked('newland.redeem failed ', StrUtil.uint2str(error))));
+        }
 
         erc20s[cToken].safeTransfer(owner(), erc20s[cToken].myBalance());
     }

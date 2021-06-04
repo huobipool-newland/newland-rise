@@ -37,7 +37,7 @@ async function deploy(name, ...args) {
     } else {
         contract = await Contract.deploy(...args)
         contract.$isNew = true
-        console.log('\x1B[32m%s\x1B[39m', "Deploy Contract address:" + contract.address);
+        console.log('\x1B[32m%s\x1B[39m', `Deploy Contract ${name} address: ${contract.address}`);
         chainData[key] = contract.address;
         fs.writeFileSync(dataPath, JSON.stringify(data, null, 2))
     }
