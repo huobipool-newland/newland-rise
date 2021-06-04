@@ -14,7 +14,7 @@ let WHT_USD = '0x8EC213E7191488C7873cEC6daC8e97cdbAdb7B35'
 let address0 = '0x0000000000000000000000000000000000000000'
 
 let C_USDT = '0x72E1C21ed4774Cd14AA29d15fdF52abF1b25598e'
-let C_HUSD = '0x3006E211f6F037f2Bbfc69402d122E49Cd74b186'
+let C_HUSD = '0x878d92837F561747FB38cBA7058317935eF930Ed'
 
 async function main() {
     let lendChef = await $deploy('LendRewardChef',
@@ -39,6 +39,9 @@ async function main() {
         await cLendbridge.$setCToken(USDT, C_USDT);
         await cLendbridge.$setCToken(HUSD, C_HUSD);
     }
+
+    // await cLendbridge.$mintCollateral(HUSD, 100000000);
+    // await cLendbridge.$redeemCollateral(C_HUSD, 100000000);
 
     let model = await $deploy('CLendInterestModel', cLendbridge.address, '100000000000000000')
 
@@ -97,7 +100,9 @@ async function main() {
         await bank.$updateLendbridge(cLendbridge.address);
         await bank.$addToken(USDT, 'nUSDT');
         await bank.$addToken(HUSD, 'nHUSD');
+        // todo min
         await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
+        // todo min
         await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, false);
 
         await lendChef.$setOps(bank.address, true)

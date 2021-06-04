@@ -12,4 +12,6 @@ interface ICToken {
     function mint(uint mintAmount) external returns (uint);
 
     function redeem(uint redeemTokens) external returns (uint);
+
+    function borrowBalanceStored(address account) external view returns (uint);
 }

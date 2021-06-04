@@ -8,6 +8,7 @@ import "./interface/ILendbridge.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./library/StrUtil.sol";
+import "./Treasury.sol";
 
 contract CLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
@@ -21,6 +22,8 @@ contract CLendbridge is ILendbridge, Ownable {
     mapping(address => address) cTokens;
     mapping(address => address) erc20s;
 
+    Treasury public treasury;
+
     modifier onlyBank() {
         require(msg.sender == address(bank), 'only bank');
         _;
@@ -31,11 +34,16 @@ contract CLendbridge is ILendbridge, Ownable {
         rewardToken = _rewardToken;
         claimContract = _claimContract;
         HPT = _hpt;
+
+        treasury= new Treasury();
     }
 
     function setCToken(address erc20, address _cToken) public onlyOwner {
         cTokens[erc20] = _cToken;
         erc20s[_cToken] = erc20;
+
+        erc20.safeApprove(address(treasury), 0);
+        erc20.safeApprove(address(treasury), uint256(-1));
     }
 
     function loanAndDeposit(address erc20, uint amt) public override onlyBank {
@@ -47,20 +55,17 @@ contract CLendbridge is ILendbridge, Ownable {
 
         uint erc20Amt = erc20.myBalance();
         require(erc20Amt >= amt, 'newland.borrow failed');
-        if (erc20Amt > amt) {
-            erc20.safeTransfer(owner(), erc20Amt - amt);
-        }
-
+        erc20.safeApprove(address(bank), 0);
         erc20.safeApprove(address(bank), amt);
         bank.deposit(erc20, amt);
+
+        erc20Amt = erc20.myBalance();
+        if (erc20Amt > 0) {
+            treasury.deposit(address(this), erc20, erc20Amt);
+        }
     }
 
     function withdrawAndRepay(address erc20, address nErc20, uint nAmt) public override onlyBank {
-        uint erc20Amt = erc20.myBalance();
-        if (erc20Amt > 0) {
-            erc20.safeTransfer(owner(), erc20Amt);
-        }
-
         ICToken cToken = ICToken(cTokens[erc20]);
         if (address(cToken) != address(0)) {
             uint nErc20Amt = nErc20.myBalance();
@@ -73,9 +78,44 @@ contract CLendbridge is ILendbridge, Ownable {
 
             bank.withdraw(erc20, nAmt);
             uint repayAmt = erc20.myBalance();
+            uint debt = cToken.borrowBalanceStored(address(this));
+            if (repayAmt > debt) {
+                repayAmt = debt;
+            }
+
+            erc20.safeApprove(address(cToken), 0);
             erc20.safeApprove(address(cToken), repayAmt);
             uint error = cToken.repayBorrow(repayAmt);
             require(error == 0, string(abi.encodePacked('newland.repayBorrow failed ', StrUtil.uint2str(error))));
+        }
+
+        uint erc20Amt = erc20.myBalance();
+        if (erc20Amt > 0) {
+            treasury.deposit(address(this), erc20, erc20Amt);
+        }
+    }
+
+    function manualRepay(address erc20) public onlyOwner {
+        uint amount = treasury.userTokenAmt(address(this), erc20);
+        treasury.withdraw(address(this), erc20, amount, address(this));
+
+        ICToken cToken = ICToken(cTokens[erc20]);
+        if (address(cToken) != address(0)) {
+            uint repayAmt = erc20.myBalance();
+            uint debt = cToken.borrowBalanceStored(address(this));
+            if (repayAmt > debt) {
+                repayAmt = debt;
+            }
+
+            erc20.safeApprove(address(cToken), 0);
+            erc20.safeApprove(address(cToken), repayAmt);
+            uint error = cToken.repayBorrow(repayAmt);
+            require(error == 0, string(abi.encodePacked('manual newland.repayBorrow failed ', StrUtil.uint2str(error))));
+        }
+
+        uint erc20Amt = erc20.myBalance();
+        if (erc20Amt > 0) {
+            erc20.safeTransfer(owner(), erc20Amt);
         }
     }
 
@@ -88,6 +128,7 @@ contract CLendbridge is ILendbridge, Ownable {
             mintAmount = eBalance;
         }
 
+        erc20.safeApprove(address(cToken), 0);
         erc20.safeApprove(address(cToken), mintAmount);
         uint error = cToken.mint(mintAmount);
         require(error == 0, string(abi.encodePacked('newland.mint failed ', StrUtil.uint2str(error))));
