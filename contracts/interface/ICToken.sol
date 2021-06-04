@@ -14,4 +14,6 @@ interface ICToken {
     function redeem(uint redeemTokens) external returns (uint);
 
     function borrowBalanceStored(address account) external view returns (uint);
+
+    function underlying() external view returns (address);
 }

@@ -41,6 +41,7 @@ contract CLendbridge is ILendbridge, Ownable {
     function setCToken(address erc20, address _cToken) public onlyOwner {
         cTokens[erc20] = _cToken;
         erc20s[_cToken] = erc20;
+        require(ICToken(_cToken).underlying() == erc20, 'invalid cToken');
 
         erc20.safeApprove(address(treasury), 0);
         erc20.safeApprove(address(treasury), uint256(-1));
@@ -152,7 +153,6 @@ contract CLendbridge is ILendbridge, Ownable {
         if (address(cToken) == address(0)) {
             return 0;
         }
-        // todo
         return cToken.borrowRatePerBlock().div(3);
     }
 
