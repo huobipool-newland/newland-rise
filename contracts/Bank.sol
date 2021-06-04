@@ -259,8 +259,11 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             uint256 total = totalToken(production.borrowToken);
             uint256 nTotal = NToken(borrowBank.nTokenAddr).totalSupply();
             uint borrowBankAmt = SafeToken.myBalance(production.borrowToken);
-            uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
-            lendbridge.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
+            if (borrowBankAmt > borrowBank.totalReserve) {
+                borrowBankAmt = borrowBankAmt - borrowBank.totalReserve;
+                uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
+                lendbridge.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
+            }
         }
     }
 
