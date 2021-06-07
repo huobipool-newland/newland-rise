@@ -200,6 +200,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         require(production.isOpen, 'Production not exists');
 
         require(borrow == 0 || production.canBorrow, "Production can not borrow");
+        borroyLendbridge(borrow, production);
         calInterest(production.borrowToken);
 
         uint256 debt = _removeDebt(positions[posId], production).add(borrow);
@@ -213,13 +214,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             beforeToken = address(this).balance.sub(sendHT);
         } else {
             beforeToken = SafeToken.myBalance(production.borrowToken);
-            bool pass = borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal;
-            if (!pass && address(lendbridge) != address(0)) {
-                lendbridge.loanAndDeposit(production.borrowToken, borrow);
-                beforeToken = SafeToken.myBalance(production.borrowToken);
-                pass = borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal;
-            }
-            require(pass, "insufficient borrowToken in the bank");
+            require(borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal, "insufficient borrowToken in the bank");
             beforeToken = beforeToken.sub(borrow);
             SafeToken.safeApprove(production.borrowToken, production.goblin, borrow);
         }
@@ -245,8 +240,16 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
             _addDebt(positions[posId], production, debt);
         }
+        updateLendChef(positions[posId], production);
         repayLendbridge(production);
         emit OpPosition(posId, debt, backToken);
+    }
+
+    function borroyLendbridge(uint borrow, Production memory production) internal {
+        uint balance = SafeToken.myBalance(production.borrowToken);
+        if (borrow > balance) {
+            lendbridge.loanAndDeposit(production.borrowToken, borrow - balance);
+        }
     }
 
     function repayLendbridge(Production memory production) internal {
@@ -342,8 +345,6 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         bank.totalVal = bank.totalVal.sub(debtVal);
         bank.totalDebtShare = bank.totalDebtShare.add(debtShare);
         bank.totalDebt = bank.totalDebt.add(debtVal);
-
-        updateLendChef(pos, production, debtVal);
     }
 
     function _removeDebt(Position storage pos, Production storage production) internal returns (uint256) {
@@ -357,16 +358,13 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             bank.totalVal = bank.totalVal.add(debtVal);
             bank.totalDebtShare = bank.totalDebtShare.sub(debtShare);
             bank.totalDebt = bank.totalDebt.sub(debtVal);
-
-            updateLendChef(pos, production, debtVal);
-
             return debtVal;
         } else {
             return 0;
         }
     }
 
-    function updateLendChef(Position storage pos, Production storage production, uint debtVal) internal {
+    function updateLendChef(Position storage pos, Production storage production) internal {
         if (address(lendbridge) != address(0)) {
             if (lendbridge.claimable()) {
                 _claimLendbridge();
@@ -375,7 +373,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         if (address(lendRewardChef) != address(0)) {
             uint lendChefPid = lendRewardChef.getPid(production.borrowToken);
             if (lendChefPid < uint(-1)) {
-                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, debtVal, pos.owner);
+                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, banks[production.borrowToken].totalDebt, pos.owner);
             }
         }
     }

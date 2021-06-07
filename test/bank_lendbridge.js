@@ -50,14 +50,11 @@ describe("BANK_LENDBRIDGE", function() {
         const bankAddress = await $getContract('Bank');
         const husdA = await ethers.getContractAt(erc20Artifact,husd);
 
-        const lens = await $getContract('Lens');
-
         //approve strategy
         await husdA.connect(signer).approve(addStra,"100000000");
 
         let cPosition = await bankAddress.$currentPos()
-        console.log("currentPosition: " + cPosition-1)
-        console.log(await lens.$userPostions(cPosition-1));
+        console.log("currentPosition: " + (cPosition-1))
 
         await bankAddress.$connect(signer).$opPosition(cPosition-1,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
         console.log("currentPosition: " + (await bankAddress.$currentPos()))
