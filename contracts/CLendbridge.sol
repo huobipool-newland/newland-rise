@@ -185,6 +185,9 @@ contract CLendbridge is ILendbridge, Ownable {
     }
 
     function debtRewardPending(address user, address debtToken, address _rewardToken) public override view returns(uint) {
+        if (address(lendRewardLens) == address(0)) {
+            return 0;
+        }
         return lendRewardLens.pending(user, cTokens[debtToken], _rewardToken);
     }
 }
