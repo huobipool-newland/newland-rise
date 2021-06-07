@@ -13,6 +13,7 @@ import "./interface/IMdexPair.sol";
 import "./interface/IStakingRewards.sol";
 import "./MdxExcessReward.sol";
 import "./interface/IPriceOracle.sol";
+import "./library/Math.sol";
 
 contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
     /// @notice Libraries
@@ -194,6 +195,7 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
         // 3. Convert the position's LP tokens to the underlying assets.
         uint256 userToken0 = lpBalance.mul(totalAmount0).div(lpSupply);
         uint256 userToken1 = lpBalance.mul(totalAmount1).div(lpSupply);
+        uint256 userAmtProduct = userToken0.mul(userToken1);
 
         if (isDebtHt) {
             borrowToken = token0 == wht ? token0 : token1;
@@ -203,8 +205,8 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
         (int token1Price,) = oracle.getPrice(token1);
         require(token0Price > 0, 'oracle token0Price invalid');
         require(token1Price > 0, 'oracle token1Price invalid');
-        uint totalAmt = userToken0.mul(uint(token0Price)) + userToken1.mul(uint(token1Price));
-
+        uint256 priceProduct = uint(token0Price).mul(uint(token1Price));
+        uint totalAmt = Math.sqrt(userAmtProduct.mul(priceProduct)).mul(2);
         // 4. Convert all farming tokens to debtToken and return total amount.
         if (borrowToken == token0) {
             return totalAmt.div(uint(token0Price));

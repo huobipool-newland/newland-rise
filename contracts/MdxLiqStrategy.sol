@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./library/SafeToken.sol";
-import "./library/Math.sol";
 import "./interface/Strategy.sol";
 import "./interface/IWHT.sol";
 import "./interface/IMdexFactory.sol";

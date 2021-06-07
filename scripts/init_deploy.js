@@ -16,15 +16,10 @@ let address0 = '0x0000000000000000000000000000000000000000'
 let C_USDT = '0x72E1C21ed4774Cd14AA29d15fdF52abF1b25598e'
 let C_HUSD = '0x878d92837F561747FB38cBA7058317935eF930Ed'
 
+let lendCliam = address0
+let lendLens = address0
+
 async function main() {
-    let lendChef = await $deploy('LendRewardChef',
-        DEP, //dep
-        0//startBlock
-    )
-    if (lendChef.$isNew) {
-        await lendChef.$add(10, HUSD);
-        await lendChef.$add(10, USDT);
-    }
     let priceOracle = await $deploy("PriceOracle")
     if (priceOracle.$isNew) {
         await priceOracle.$setPriceFeed(USDT, USDT_USD);
@@ -34,10 +29,20 @@ async function main() {
     }
 
     let bank = await $deploy('Bank')
-    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, address0, HPT) // todo
+    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens) // todo
     if (cLendbridge.$isNew) {
         await cLendbridge.$setCToken(USDT, C_USDT);
         await cLendbridge.$setCToken(HUSD, C_HUSD);
+    }
+
+    let lendChef = await $deploy('LendRewardChef',
+        DEP, //dep
+        0,//startBlock，
+        cLendbridge.address
+    )
+    if (lendChef.$isNew) {
+        await lendChef.$add(10, HUSD);
+        await lendChef.$add(10, USDT);
     }
 
     // await cLendbridge.$mintCollateral(HUSD, 100000000);
