@@ -114,7 +114,7 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         uint256 mdxTotalAllocPoint = mdxChef.totalAllocPoint();
         IMdexChef.MdxPoolInfo memory mdxPoolInfo = mdxChef.poolInfo(pool.mdxChefPid);
 
-        uint256 mdxPerBlock = mdxChef.mdxPerBlock().mul(mdxPoolInfo.allocPoint).div(mdxTotalAllocPoint);
+        uint256 mdxPerBlock = mdxChef.reward(block.number).mul(mdxPoolInfo.allocPoint).div(mdxTotalAllocPoint);
         mdxPerBlock = mdxPerBlock.mul(pool.lpBalance).div(mdxPoolInfo.totalAmount);
         mdxPerBlock = mdxPerBlock.mul(one.sub(mdxProfitRate)).div(one);
         return mdxPerBlock;
@@ -176,6 +176,7 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         uint256 _allocPoint,
         uint _mdxChefPid
     ) public onlyOwner {
+        require(address(poolInfo[_pid].lpToken) != address(0), 'pid not exist');
         massUpdatePools();
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
             _allocPoint

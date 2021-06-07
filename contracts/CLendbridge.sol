@@ -10,6 +10,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./library/StrUtil.sol";
 import "./Treasury.sol";
 
+interface LendRewardLens {
+    function pending(address _holder, address _market, address _token) external view returns (uint256 amount);
+}
+
 contract CLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
     using SafeMath for uint256;
@@ -22,6 +26,7 @@ contract CLendbridge is ILendbridge, Ownable {
     mapping(address => address) cTokens;
     mapping(address => address) erc20s;
 
+    LendRewardLens lendRewardLens;
     Treasury public treasury;
 
     modifier onlyBank() {
@@ -29,19 +34,24 @@ contract CLendbridge is ILendbridge, Ownable {
         _;
     }
 
-    constructor(IBank _bank, address _rewardToken, address _claimContract, address _hpt) public {
+    constructor(IBank _bank, address _rewardToken,
+        address _claimContract, address _hpt,
+        LendRewardLens _lendRewardLens) public {
         bank = _bank;
         rewardToken = _rewardToken;
         claimContract = _claimContract;
         HPT = _hpt;
 
+        lendRewardLens = _lendRewardLens;
         treasury= new Treasury();
     }
 
     function setCToken(address erc20, address _cToken) public onlyOwner {
+        require(erc20 != address(0) && _cToken != address(0), 'invalid address');
+        require(ICToken(_cToken).underlying() == erc20 && erc20s[erc20] == address(0) && cTokens[_cToken] == address(0), 'invalid cToken');
+
         cTokens[erc20] = _cToken;
         erc20s[_cToken] = erc20;
-        require(ICToken(_cToken).underlying() == erc20, 'invalid cToken');
 
         erc20.safeApprove(address(treasury), 0);
         erc20.safeApprove(address(treasury), uint256(-1));
@@ -101,18 +111,18 @@ contract CLendbridge is ILendbridge, Ownable {
         treasury.withdraw(address(this), erc20, amount, address(this));
 
         ICToken cToken = ICToken(cTokens[erc20]);
-        if (address(cToken) != address(0)) {
-            uint repayAmt = erc20.myBalance();
-            uint debt = cToken.borrowBalanceStored(address(this));
-            if (repayAmt > debt) {
-                repayAmt = debt;
-            }
+        require(address(cToken) != address(0), 'cToken not support');
 
-            erc20.safeApprove(address(cToken), 0);
-            erc20.safeApprove(address(cToken), repayAmt);
-            uint error = cToken.repayBorrow(repayAmt);
-            require(error == 0, string(abi.encodePacked('manual newland.repayBorrow failed ', StrUtil.uint2str(error))));
+        uint repayAmt = erc20.myBalance();
+        uint debt = cToken.borrowBalanceStored(address(this));
+        if (repayAmt > debt) {
+            repayAmt = debt;
         }
+
+        erc20.safeApprove(address(cToken), 0);
+        erc20.safeApprove(address(cToken), repayAmt);
+        uint error = cToken.repayBorrow(repayAmt);
+        require(error == 0, string(abi.encodePacked('manual newland.repayBorrow failed ', StrUtil.uint2str(error))));
 
         uint erc20Amt = erc20.myBalance();
         if (erc20Amt > 0) {
@@ -172,5 +182,9 @@ contract CLendbridge is ILendbridge, Ownable {
 
     function withdrawHpt() public onlyOwner {
         HPT.safeTransfer(owner(), HPT.myBalance());
+    }
+
+    function debtRewardPending(address user, address debtToken, address _rewardToken) public override view returns(uint) {
+        return lendRewardLens.pending(user, cTokens[debtToken], _rewardToken);
     }
 }

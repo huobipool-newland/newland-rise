@@ -12,6 +12,7 @@ import "./library/TransferHelper.sol";
 import "./interface/IStakingRewards.sol";
 import "./Treasury.sol";
 import "./AccessSetting.sol";
+import "./interface/ILendbridge.sol";
 
 contract LendRewardChef is AccessSetting,IStakingRewards {
     using SafeMath for uint256;
@@ -44,6 +45,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     uint256 one = 1e18;
 
     mapping(address => uint) poolLenMap;
+    ILendbridge lendbridge;
 
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -51,10 +53,12 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
 
     constructor(
         IERC20 _rewardToken,
-        uint256 _startBlock
+        uint256 _startBlock,
+        ILendbridge _lendbridge
     ) public {
         rewardToken = _rewardToken;
         startBlock = _startBlock;
+        lendbridge = _lendbridge;
 
         rewardTreasury = new Treasury();
         rewardToken.approve(address(rewardTreasury), uint256(-1));
@@ -120,6 +124,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         uint256 _pid,
         uint256 _allocPoint
     ) public onlyOwner {
+        require(address(poolInfo[_pid].stake) != address(0), 'pid not exist');
         massUpdatePools();
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
             _allocPoint
@@ -151,8 +156,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         uint256 accRewardPerShare = pool.accRewardPerShare;
         uint256 stakeSupply = pool.stakeBalance;
         if (block.number > pool.lastRewardBlock && stakeSupply != 0) {
-            // todo reward = ???
-            uint reward = 0;
+            uint reward = lendbridge.debtRewardPending(_user, address(pool.stake), address(rewardToken));
             accRewardPerShare = pool.accRewardPerShare.add(
                 reward.mul(1e12).div(stakeSupply)
             );
