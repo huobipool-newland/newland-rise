@@ -11,6 +11,9 @@ contract Treasury is Ownable {
     mapping(address => uint) public tokenTotalAmt;
 
     function deposit(address user, address token, uint amt) public onlyOwner returns(uint) {
+        if (amt <= 0) {
+            return amt;
+        }
         token.safeTransferFrom(msg.sender, address(this), amt);
         userTokenAmt[user][token] += amt;
         tokenTotalAmt[token] += amt;
@@ -18,6 +21,9 @@ contract Treasury is Ownable {
     }
 
     function withdraw(address user, address token, uint amt, address to) public onlyOwner returns(uint) {
+        if (amt <= 0) {
+            return amt;
+        }
         require(userTokenAmt[user][token] >= amt, "user amt not enough");
 
         userTokenAmt[user][token] -= amt;
@@ -26,7 +32,9 @@ contract Treasury is Ownable {
         if (amt > bal) {
             amt = bal;
         }
-        token.safeTransfer(to, amt);
+        if (amt > 0) {
+            token.safeTransfer(to, amt);
+        }
         return amt;
     }
 }

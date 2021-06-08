@@ -16,8 +16,8 @@ let address0 = '0x0000000000000000000000000000000000000000'
 let C_USDT = '0x72E1C21ed4774Cd14AA29d15fdF52abF1b25598e'
 let C_HUSD = '0x878d92837F561747FB38cBA7058317935eF930Ed'
 
-let lendCliam = address0
-let lendLens = address0
+let lendCliam = address0  // todo
+let lendLens = address0  // todo
 
 async function main() {
     let priceOracle = await $deploy("PriceOracle")
@@ -29,10 +29,11 @@ async function main() {
     }
 
     let bank = await $deploy('Bank')
-    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens) // todo
+    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens)
     if (cLendbridge.$isNew) {
         await cLendbridge.$setCToken(USDT, C_USDT);
         await cLendbridge.$setCToken(HUSD, C_HUSD);
+        await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD]);
     }
 
     let lendChef = await $deploy('LendRewardChef',

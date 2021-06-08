@@ -14,6 +14,10 @@ interface LendRewardLens {
     function pending(address _holder, address _market, address _token) external view returns (uint256 amount);
 }
 
+interface ClaimContract {
+    function claimAll(address holder, address[] memory markets) external;
+}
+
 contract CLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
     using SafeMath for uint256;
@@ -23,10 +27,11 @@ contract CLendbridge is ILendbridge, Ownable {
     address public claimContract;
     address public HPT;
 
-    mapping(address => address) cTokens;
-    mapping(address => address) erc20s;
+    mapping(address => address) public  cTokens;
+    mapping(address => address) public erc20s;
+    address[] public claimCTokens;
 
-    LendRewardLens lendRewardLens;
+    LendRewardLens public lendRewardLens;
     Treasury public treasury;
 
     modifier onlyBank() {
@@ -44,6 +49,14 @@ contract CLendbridge is ILendbridge, Ownable {
 
         lendRewardLens = _lendRewardLens;
         treasury= new Treasury();
+    }
+
+    function setClaimCTokens(address[] memory _claimCTokens) public onlyOwner {
+        claimCTokens = _claimCTokens;
+    }
+
+    function getClaimCTokens() public view returns(address[] memory) {
+        return claimCTokens;
     }
 
     function setCToken(address erc20, address _cToken) public onlyOwner {
@@ -119,10 +132,12 @@ contract CLendbridge is ILendbridge, Ownable {
             repayAmt = debt;
         }
 
-        erc20.safeApprove(address(cToken), 0);
-        erc20.safeApprove(address(cToken), repayAmt);
-        uint error = cToken.repayBorrow(repayAmt);
-        require(error == 0, string(abi.encodePacked('manual newland.repayBorrow failed ', StrUtil.uint2str(error))));
+        if (repayAmt > 0) {
+            erc20.safeApprove(address(cToken), 0);
+            erc20.safeApprove(address(cToken), repayAmt);
+            uint error = cToken.repayBorrow(repayAmt);
+            require(error == 0, string(abi.encodePacked('manual newland.repayBorrow failed ', StrUtil.uint2str(error))));
+        }
 
         uint erc20Amt = erc20.myBalance();
         if (erc20Amt > 0) {
@@ -175,9 +190,7 @@ contract CLendbridge is ILendbridge, Ownable {
 
     // claim dep
     function claim() public override onlyBank returns(address, uint) {
-        bytes4 methodId = bytes4(keccak256("claim(address)"));
-        (bool success,) = claimContract.call(abi.encodeWithSelector(methodId, address(this)));
-        require(success, 'claim CLendbridge failed');
+        ClaimContract(claimContract).claimAll(address(this), claimCTokens);
         uint rewardAmt = rewardToken.myBalance();
         rewardToken.safeTransfer(address(bank), rewardAmt);
         return (rewardToken, rewardAmt);

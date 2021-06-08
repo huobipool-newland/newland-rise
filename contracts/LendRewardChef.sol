@@ -155,7 +155,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accRewardPerShare = pool.accRewardPerShare;
         uint256 stakeSupply = pool.stakeBalance;
-        if (block.number > pool.lastRewardBlock && stakeSupply != 0) {
+        if (stakeSupply != 0) {
             uint reward = lendbridge.debtRewardPending(address(pool.stake), address(rewardToken));
             accRewardPerShare = pool.accRewardPerShare.add(
                 reward.mul(1e12).div(stakeSupply)

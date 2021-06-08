@@ -16,7 +16,7 @@ let address0 = '0x0000000000000000000000000000000000000000'
 let C_USDT = '0xB95952B833d1f4e78080aA860E6cc99968178914'
 let C_HUSD = '0x26b345b7899Bf4Be44063301437F62CC4E3AcAe1'
 
-let lendCliam = address0
+let lendCliam = '0x1eD50efDbCEf11A8c7095B0E0222d79EAc770558'
 let lendLens = '0x0a8e6d4b212F93445903E9806693C6676eD6A417'
 
 async function main() {
@@ -29,10 +29,11 @@ async function main() {
     }
 
     let bank = await $deploy('Bank')
-    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens) // todo
+    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens)
     if (cLendbridge.$isNew) {
         await cLendbridge.$setCToken(USDT, C_USDT);
         await cLendbridge.$setCToken(HUSD, C_HUSD);
+        await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD]);
     }
 
     let lendChef = await $deploy('LendRewardChef',
@@ -105,9 +106,7 @@ async function main() {
         await bank.$updateLendbridge(cLendbridge.address);
         await bank.$addToken(USDT, 'nUSDT');
         await bank.$addToken(HUSD, 'nHUSD');
-        // todo min
         await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
-        // todo min
         await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, false);
 
         await lendChef.$setOps(bank.address, true)

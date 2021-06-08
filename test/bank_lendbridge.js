@@ -62,9 +62,12 @@ describe("BANK_LENDBRIDGE", function() {
     it('领取DEP', async () => {
         let lendRewardChef = await $getContract('LendRewardChef')
 
+        await $evmGoSec(10000)
         console.log(await lendRewardChef.$pendingReward(0, impersonateAccount))
         console.log(await lendRewardChef.$pendingReward(1, impersonateAccount))
-        console.log(await lendRewardChef.$userInfo(0, impersonateAccount))
-        console.log(await lendRewardChef.$userInfo(1, impersonateAccount))
+        const bank = await $getContract('Bank');
+        await bank.$connect(signer).$claimAll(true);
+        console.log(await lendRewardChef.$pendingReward(0, impersonateAccount))
+        console.log(await lendRewardChef.$pendingReward(1, impersonateAccount))
     });
 });

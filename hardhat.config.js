@@ -21,7 +21,7 @@ module.exports = {
     hardhat: {
       chainId: 666,
       forking: {
-        url: "https://http-mainnet-node.huobichain.com"
+        url: "http://172.18.7.1:8545"
       },
       accounts: {
         mnemonic:"rural member business salute sea cook render fire notice solid adapt force"

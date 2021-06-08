@@ -255,7 +255,7 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accMdxPerShare = pool.accMdxPerShare;
         uint256 lpSupply = pool.lpBalance;
-        if (block.number > pool.lastRewardBlock && lpSupply != 0) {
+        if (lpSupply != 0) {
             uint256 mdxReward;
             (mdxReward,) = mdxChef.pending(pool.mdxChefPid, address(this));
             uint256 mdxProfit = mdxReward.mul(mdxProfitRate).div(one);
