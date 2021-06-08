@@ -47,6 +47,7 @@ contract MdxLiqStrategy is Ownable, ReentrancyGuard, Strategy, MdxExcessReward {
         require(borrowToken == token0 || borrowToken == token1, "borrowToken not token0 and token1");
 
         {
+            lpToken.approve(address(router), 0);
             lpToken.approve(address(router), uint256(-1));
             router.removeLiquidity(token0, token1, lpToken.balanceOf(address(this)), 0, 0, address(this), now);
         }

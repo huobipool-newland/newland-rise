@@ -156,7 +156,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         uint256 accRewardPerShare = pool.accRewardPerShare;
         uint256 stakeSupply = pool.stakeBalance;
         if (block.number > pool.lastRewardBlock && stakeSupply != 0) {
-            uint reward = lendbridge.debtRewardPending(_user, address(pool.stake), address(rewardToken));
+            uint reward = lendbridge.debtRewardPending(address(pool.stake), address(rewardToken));
             accRewardPerShare = pool.accRewardPerShare.add(
                 reward.mul(1e12).div(stakeSupply)
             );
@@ -211,7 +211,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         if (_amount > user.amount) {
             pool.stakeBalance = pool.stakeBalance.add(_amount.sub(user.amount));
             user.amount = user.amount.add(_amount.sub(user.amount));
-        } else {
+        } else if (_amount < user.amount) {
             pool.stakeBalance = pool.stakeBalance.sub(user.amount.sub(_amount));
             user.amount = user.amount.sub(user.amount.sub(_amount));
         }
@@ -264,9 +264,10 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         PoolInfo storage pool = poolInfo[_pid];
         withdraw(_pid, 0, _user);
         uint amount = pool.treasury.userTokenAmt(_user, address(token));
-        pool.treasury.withdraw(_user, address(token), amount, to);
-        emit Claim(token, _user, to, amount);
-
+        if (amount > 0) {
+            pool.treasury.withdraw(_user, address(token), amount, to);
+            emit Claim(token, _user, to, amount);
+        }
         return amount;
     }
 
@@ -282,7 +283,9 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
             _amount = rewardBal;
         }
 
-        pool.treasury.deposit(_to, address(rewardToken), _amount);
+        if (_amount > 0) {
+            pool.treasury.deposit(_to, address(rewardToken), _amount);
+        }
     }
 
 fallback() external {}

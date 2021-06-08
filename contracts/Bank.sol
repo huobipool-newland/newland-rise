@@ -216,6 +216,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             beforeToken = SafeToken.myBalance(production.borrowToken);
             require(borrow <= beforeToken && debt <= banks[production.borrowToken].totalVal, "insufficient borrowToken in the bank");
             beforeToken = beforeToken.sub(borrow);
+            SafeToken.safeApprove(production.borrowToken, production.goblin, 0);
             SafeToken.safeApprove(production.borrowToken, production.goblin, borrow);
         }
 
@@ -318,17 +319,23 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         Goblin(production.goblin).claim(pos.owner, pos.owner);
     }
 
-    function claimWithGoblins(address[] memory goblins) external onlyEOA nonReentrant {
+    function claimWithGoblins(address[] memory goblins, bool claimLendReward) external onlyEOA nonReentrant {
         for(uint i = 0; i< goblins.length; i++) {
             Goblin(goblins[i]).claim(msg.sender, msg.sender);
         }
+        if (claimLendReward) {
+            claimLendbridge();
+        }
     }
 
-    function claimAll() external onlyEOA nonReentrant {
+    function claimAll(bool claimLendReward) external onlyEOA nonReentrant {
         uint[] memory ps = userPositions[msg.sender];
         for(uint i = 0; i< ps.length; i++) {
             address goblin = productions[positions[ps[i]].productionId].goblin;
             Goblin(goblin).claim(msg.sender, msg.sender);
+        }
+        if (claimLendReward) {
+            claimLendbridge();
         }
     }
 
@@ -484,17 +491,17 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     function claimLendbridge() public {
-        require(address(lendbridge) != address(0), 'lendbridge not found');
-        require(lendbridge.claimable(), 'lendbridge disable for claim');
-
-        _claimLendbridge();
-        for(uint i = 0; i<lendRewardChef.poolLength(); i++) {
-            lendRewardChef.claimAll(i, msg.sender, msg.sender);
+        if (address(lendbridge) != address(0) && lendbridge.claimable()) {
+            _claimLendbridge();
+            for(uint i = 0; i<lendRewardChef.poolLength(); i++) {
+                lendRewardChef.claimAll(i, msg.sender, msg.sender);
+            }
         }
     }
 
     function _claimLendbridge() internal returns(address, uint){
         (address token, uint claimAmt) = lendbridge.claim();
+        token.safeApprove(address(lendRewardChef), 0);
         token.safeApprove(address(lendRewardChef), claimAmt);
         ILendRewardChef(address(lendRewardChef)).addReward(claimAmt);
         return (token, claimAmt);

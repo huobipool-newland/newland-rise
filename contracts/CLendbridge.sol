@@ -146,6 +146,9 @@ contract CLendbridge is ILendbridge, Ownable {
     }
 
     function redeemCollateral(address cToken, uint cAmt) external onlyOwner {
+        address erc20 = erc20s[cToken];
+        require(erc20 != address(0), 'cToken not support');
+
         uint cBalance = cToken.myBalance();
         if (cAmt > cBalance) {
             cAmt = cBalance;
@@ -184,10 +187,10 @@ contract CLendbridge is ILendbridge, Ownable {
         HPT.safeTransfer(owner(), HPT.myBalance());
     }
 
-    function debtRewardPending(address user, address debtToken, address _rewardToken) public override view returns(uint) {
+    function debtRewardPending(address debtToken, address _rewardToken) public override view returns(uint) {
         if (address(lendRewardLens) == address(0)) {
             return 0;
         }
-        return lendRewardLens.pending(user, cTokens[debtToken], _rewardToken);
+        return lendRewardLens.pending(address(this), cTokens[debtToken], _rewardToken);
     }
 }

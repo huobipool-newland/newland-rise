@@ -340,9 +340,12 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
             safeMdxTransfer(_pid, pool, _user, mdxPending);
         }
 
-        pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
-        pool.lpToken.approve(address(mdxChef), _amount);
-        mdxChef.deposit(pool.mdxChefPid, _amount);
+        if (_amount > 0) {
+            pool.lpToken.safeTransferFrom(msg.sender, address(this), _amount);
+            pool.lpToken.approve(address(mdxChef), 0);
+            pool.lpToken.approve(address(mdxChef), _amount);
+            mdxChef.deposit(pool.mdxChefPid, _amount);
+        }
 
         pool.lpBalance = pool.lpBalance.add(_amount);
         user.amount = user.amount.add(_amount);
@@ -379,8 +382,10 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         user.rewardDebt = user.amount.mul(pool.accHptPerShare).div(1e12);
         user.mdxRewardDebt = user.amount.mul(pool.accMdxPerShare).div(1e12);
 
-        mdxChef.withdraw(pool.mdxChefPid, _amount);
-        pool.lpToken.safeTransfer(msg.sender, _amount);
+        if (_amount > 0) {
+            mdxChef.withdraw(pool.mdxChefPid, _amount);
+            pool.lpToken.safeTransfer(msg.sender, _amount);
+        }
 
         emit Withdraw(msg.sender, _pid, _amount);
     }
@@ -389,9 +394,10 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         PoolInfo storage pool = poolInfo[_pid];
         withdraw(_pid, 0, _user);
         uint amount = pool.treasury.userTokenAmt(_user, address(token));
-        pool.treasury.withdraw(_user, address(token), amount, to);
-        emit Claim(token, _user, to, amount);
-
+        if (amount > 0) {
+            pool.treasury.withdraw(_user, address(token), amount, to);
+            emit Claim(token, _user, to, amount);
+        }
         return amount;
     }
 
@@ -407,8 +413,9 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         if (_amount > hptBal) {
             _amount = hptBal;
         }
-
-        pool.treasury.deposit(_to, address(hpt), _amount);
+        if (_amount > 0) {
+            pool.treasury.deposit(_to, address(hpt), _amount);
+        }
     }
 
     function safeMdxTransfer(uint256 pid, PoolInfo memory pool, address _to, uint256 _amount) internal {
@@ -418,8 +425,9 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         if (_amount > mdxBal) {
             _amount = mdxBal;
         }
-
-        pool.treasury.deposit(_to, address(mdx), _amount);
+        if (_amount > 0) {
+            pool.treasury.deposit(_to, address(mdx), _amount);
+        }
     }
 
 fallback() external {}

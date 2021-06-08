@@ -72,6 +72,7 @@ contract MdxStrategyWithdrawMinimizeTrading is Ownable, ReentrancyGuard, Strateg
         token1 = lpToken.token1();
 
         {
+            lpToken.approve(address(router), 0);
             lpToken.approve(address(router), uint256(-1));
             router.removeLiquidity(token0, token1, lpToken.balanceOf(address(this)), 0, 0, address(this), now);
         }

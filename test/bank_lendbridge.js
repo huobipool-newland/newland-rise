@@ -59,4 +59,12 @@ describe("BANK_LENDBRIDGE", function() {
         await bankAddress.$connect(signer).$opPosition(cPosition-1,1,"1000000000000000000", $opAddData(addStra, husd, usdt, 100000000, 0));
         console.log("currentPosition: " + (await bankAddress.$currentPos()))
     });
+    it('领取DEP', async () => {
+        let lendRewardChef = await $getContract('LendRewardChef')
+
+        console.log(await lendRewardChef.$pendingReward(0, impersonateAccount))
+        console.log(await lendRewardChef.$pendingReward(1, impersonateAccount))
+        console.log(await lendRewardChef.$userInfo(0, impersonateAccount))
+        console.log(await lendRewardChef.$userInfo(1, impersonateAccount))
+    });
 });
