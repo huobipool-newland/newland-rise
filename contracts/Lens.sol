@@ -37,6 +37,11 @@ interface ChefLensInterface {
 
 }
 
+interface LendChefInterface {
+    function pendingReward(uint256 _pid, address _user) external view returns (uint256);
+    function getPid(address stakingToken) external view returns(uint);
+}
+
 interface GoblinLensInterface {
 
     function token0() external view returns (address);
@@ -113,6 +118,7 @@ contract Lens {
         uint256 risk;
         uint256 mdxReward;
         uint256 hptReward;
+        uint256 depReward;
     }
 
     struct DepositInfo {
@@ -207,8 +213,14 @@ contract Lens {
             token1Amount : token1Amount,
             risk : calculateRisk(prodId,debtAmount, healthAmount),
             mdxReward : mdxReward,
-            hptReward : hptReward
+            hptReward : hptReward,
+            depReward: getUserDepReward(owner, borrowToken)
             });
+    }
+
+    function getUserDepReward(address owner, address borrowToken) public view returns (uint){
+        LendChefInterface lendChef = LendChefInterface(address(bankContract.lendRewardChef()));
+        return lendChef.pendingReward(lendChef.getPid(borrowToken), owner);
     }
 
     function userDeposits(address userAddr, address bankToken) public view returns (DepositInfo memory){

@@ -73,11 +73,11 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         }
     }
 
-    function getRewardToken() external override returns(address) {
+    function getRewardToken() view external override returns(address) {
         return address(rewardToken);
     }
 
-    function getPid(address stake) public override returns(uint) {
+    function getPid(address stake) public view override returns(uint) {
         if (poolLenMap[stake] > 0) {
             return poolLenMap[stake] - 1;
         }

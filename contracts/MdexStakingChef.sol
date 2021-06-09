@@ -89,11 +89,11 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         treasuryAddress = _treasuryAddress;
     }
 
-    function getRewardToken() external override returns(address) {
+    function getRewardToken() external view override returns(address) {
         return address(mdx);
     }
 
-    function getPid(address lpToken) public override returns(uint) {
+    function getPid(address lpToken) public view override returns(uint) {
         if (poolLenMap[lpToken] > 0) {
             return poolLenMap[lpToken] - 1;
         }

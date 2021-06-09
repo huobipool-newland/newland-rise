@@ -11,9 +11,9 @@ interface IStakingRewards {
 
     function claimAll(uint _pid, address _user, address to) external;
 
-    function getPid(address stakingToken) external returns(uint);
+    function getPid(address stakingToken) external view returns(uint);
 
-    function getRewardToken() external returns(address);
+    function getRewardToken() external view returns(address);
 
     function poolLength() external view returns (uint256);
 }
