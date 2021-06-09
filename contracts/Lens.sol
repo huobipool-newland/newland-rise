@@ -57,8 +57,8 @@ contract Lens {
 
     using SafeMath for uint256;
 
-    Bank bankContract;
-    PriceOracle  priceOracle;
+    Bank public bankContract;
+    PriceOracle public  priceOracle;
     uint public constant blocksPerYear = 10512000;
 
     struct BankTokenMetadata {
@@ -130,7 +130,7 @@ contract Lens {
     }
     mapping(address => StrategyInfo) strategyInfos;
 
-    constructor(Bank bank, PriceOracle oracle) public {
+    function setParams(Bank bank, PriceOracle oracle) public {
         bankContract = bank;
         priceOracle = oracle;
     }

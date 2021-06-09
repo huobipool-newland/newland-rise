@@ -33,7 +33,7 @@ async function deploy(name, ...args) {
     let address = chainData[key]
     if (address) {
         contract = Contract.attach(address);
-        console.log("Exist Contract address:", contract.address);
+        console.log(`Exist Contract ${name} address: ${contract.address}`);
     } else {
         contract = await Contract.deploy(...args)
         contract.$isNew = true
@@ -183,5 +183,6 @@ global.$opDataDecode = opDataDecode
 global.$encodeParams = encodeParams
 global.$decodeParams = decodeParams
 global.$evmGoSec = evmGoSec
+global.$config = Object.values(require('./_config')).filter(item => item.$import)[0]
 
 
