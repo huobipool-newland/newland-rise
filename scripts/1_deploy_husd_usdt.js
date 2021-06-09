@@ -73,6 +73,7 @@ async function main() {
     await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, false);
 
     await lens.$setStrategyInfo(goblin.address, mdxAddStrategy.address, mdxWithdrawStrategy.address);
+    console.log('---done')
 }
 
 main()

@@ -52,8 +52,9 @@ async function main() {
 
     let lens = await $deploy('Lens');
     if (lens.$isNew) {
-        lens.$setParams(bank.address, priceOracle.address)
+        await lens.$setParams(bank.address, priceOracle.address)
     }
+    console.log('---done')
 }
 
 main()
