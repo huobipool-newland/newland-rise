@@ -3,8 +3,7 @@ let {MDX_ROUTER,
     MDX,
     WHT,
 
-    ETH,
-    ETH_USD
+    WHT_USD
 } = $config;
 
 async function main() {
@@ -13,15 +12,15 @@ async function main() {
     let chef = await $getContract('MdexStakingChef')
     let lens = await $getContract('Lens');
 
-    await priceOracle.$setPriceFeed(ETH, ETH_USD);
+    await priceOracle.$setPriceFeed(WHT, WHT_USD);
 
-    // ------ 9 0x78C90d3f8A64474982417cDB490E840c01E516D4 1781
-    // ETH 0x64FF637fB478863B7468bc97D30a5bF3A428a1fD
+    // ------ 17 0x499B6E03749B4bAF95F9E70EeD5355b138EA6C31 782
+    // WHT 0x5545153CCFcA01fbd7Dd11C0b23ba694D9509A6F
     // USDT 0xa71EdC38d189767582C38A3145b5873052c3e47a
     await chef.$add(
         1,//allocPoint,
-        '0x78C90d3f8A64474982417cDB490E840c01E516D4',//lpToken,
-        9//mdxChefPid
+        '0x499B6E03749B4bAF95F9E70EeD5355b138EA6C31',//lpToken,
+        17//mdxChefPid
     );
 
     let liqStrategy = await $deploy('MdxLiqStrategy', MDX_ROUTER);
@@ -30,7 +29,7 @@ async function main() {
         bank.address,//operator,
         chef.address,//staking,
         MDX_ROUTER,//router,
-        ETH,//token0,
+        WHT,//token0,
         USDT,//token1,
         liqStrategy.address,//liqStrategy
         priceOracle.address
@@ -47,10 +46,10 @@ async function main() {
         await goblin.$setStrategyOk([mdxAddStrategy.address, mdxWithdrawStrategy.address], true)
         await chef.$setOps(goblin.address, true)
         await goblin.$setSwapPath(USDT, [MDX, USDT]);
-        await goblin.$setSwapPath(ETH, [MDX, ETH]);
+        await goblin.$setSwapPath(WHT, [MDX, WHT]);
     }
 
-    await bank.$addToken(ETH, 'nETH');
+    await bank.$addToken(WHT, 'nWHT');
 
     // todo min
     await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
