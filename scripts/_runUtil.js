@@ -6,6 +6,18 @@ let web3 = global.web3 || new Web3('http://localhost:8545')
 let MdxStrategyAddTwoSidesOptimal_calldata_types = ['address', 'address', 'uint256', 'uint256', 'uint256']
 let MdxStrategyWithdrawMinimizeTrading_calldata_types = ['address', 'address', 'uint']
 let MdxGoblin_calldata_types = ['address', 'bytes']
+let configs = require('./_config')
+let config
+for(let configKey of Object.keys(configs)) {
+    config = configs[configKey]
+    if (config.$import) {
+        config.$configKey = configKey
+        break
+    }
+}
+if (!config) {
+    throw 'no config found with $import: true'
+}
 
 async function deploy(name, ...args) {
     const [deployer] = await ethers.getSigners();
@@ -25,11 +37,12 @@ async function deploy(name, ...args) {
     }
     let data = JSON.parse(String(fs.readFileSync(dataPath)))
 
-    if (!data[chainId]) {
-        data[chainId] = {}
+    let dataKey = [chainId, config.$configKey].join('-')
+    if (!data[dataKey]) {
+        data[dataKey] = {}
     }
     let key = name+ '/' +args.join(',')
-    let chainData = data[chainId]
+    let chainData = data[dataKey]
     let address = chainData[key]
     if (address) {
         contract = Contract.attach(address);
@@ -55,10 +68,11 @@ async function getAddress(name, chainId) {
     }
     let data = JSON.parse(String(fs.readFileSync(dataPath)))
 
-    if (!data[chainId]) {
-        data[chainId] = {}
+    let dataKey = [chainId, config.$configKey].join('-')
+    if (!data[dataKey]) {
+        data[dataKey] = {}
     }
-    let chainData = data[chainId]
+    let chainData = data[dataKey]
 
     for (let key of Object.keys(chainData).reverse()) {
         if (key.startsWith(`${name}/`)) {
@@ -173,6 +187,7 @@ async function evmGoSec(seconds) {
 }
 
 
+
 global.$deploy = deploy
 global.$getAddress = getAddress
 global.$getContract = getContract
@@ -183,6 +198,5 @@ global.$opDataDecode = opDataDecode
 global.$encodeParams = encodeParams
 global.$decodeParams = decodeParams
 global.$evmGoSec = evmGoSec
-global.$config = Object.values(require('./_config')).filter(item => item.$import)[0]
-
+global.$config = config
 

@@ -7,12 +7,17 @@ let {WHT,
     WHT_USD,
 
     lendCliam,
-    lendLens} = $config;
+    lendLens,
+
+    HPT_USD
+
+} = $config;
 async function main() {
     let priceOracle = await $deploy("PriceOracle")
     if (priceOracle.$isNew) {
         await priceOracle.$setPriceFeed(WHT, WHT_USD);
         await priceOracle.$setPriceFeed(MDX, MDX_USD);
+        await priceOracle.$setPriceFeed(HPT, HPT_USD);
     }
 
     let bank = await $deploy('Bank')

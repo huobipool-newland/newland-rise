@@ -17,7 +17,12 @@ module.exports = {
         C_USDT : '0x72E1C21ed4774Cd14AA29d15fdF52abF1b25598e',
         C_HUSD : '0x878d92837F561747FB38cBA7058317935eF930Ed',
         lendCliam : address0,  // todo
-        lendLens : address0, // todo
+        lendLens : address0, // todo,
+        ETH_USD: '0x5Fa530068e0F5046479c588775c157930EF0Dff0',
+        HPT_USD: '0x77D89A33F7226C3BF5EFced5BbC40624281843bF',
+        BTC_USD: '0xD5c40f5144848Bd4EF08a9605d860e727b991513',
+        ETH: '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd',
+        C_ETH: ''
     },
     dev: {
         $import: true,
@@ -36,5 +41,10 @@ module.exports = {
         C_HUSD : '0x26b345b7899Bf4Be44063301437F62CC4E3AcAe1',
         lendCliam : '0x1eD50efDbCEf11A8c7095B0E0222d79EAc770558',
         lendLens : '0x0a8e6d4b212F93445903E9806693C6676eD6A417',
+        ETH_USD: '0x5Fa530068e0F5046479c588775c157930EF0Dff0',
+        HPT_USD: '0x77D89A33F7226C3BF5EFced5BbC40624281843bF',
+        BTC_USD: '0xD5c40f5144848Bd4EF08a9605d860e727b991513',
+        ETH: '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd',
+        C_ETH: '0x91d2398f412663E4d5433c589Eab9a36100AdADf'
     }
 }
