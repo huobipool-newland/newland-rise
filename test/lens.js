@@ -30,10 +30,7 @@ describe("lens", function() {
         console.log(await lensContract.$getAllUserPos())
     });
     it("test1", async function() {
-        const bank = await $getContract('Bank');
-        const oracle = await $getContract('PriceOracle');
-
-        const lensContract = await $deploy('Lens',bank.address, oracle.address);
+        const lensContract = await $deploy('Lens');
 
 
         // //deposit
@@ -74,7 +71,7 @@ describe("lens", function() {
         //check lens
         const posAll = await lensContract.$getAllUserPos();
         console.log(posAll.toString());
-        const userAll =  await lensContract.$userAll(impersonateAccount);
-        console.log(userAll[0].toString());
+        // const userAll =  await lensContract.$userAll(impersonateAccount);
+        // console.log(userAll[0].toString());
     });
 });
