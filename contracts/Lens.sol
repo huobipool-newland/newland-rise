@@ -441,7 +441,7 @@ contract Lens {
         //console.log(liquidateFactor);
         uint256 loanRate = debtValue.mul(10000).div(lpValue);
         //console.log(loanRate);
-        uint256 risk = loanRate.mul(100).div(liquidateFactor);
+        uint256 risk = loanRate.mul(10000).div(liquidateFactor);
         //console.log(risk);
         return risk;
     }

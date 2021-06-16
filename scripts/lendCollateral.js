@@ -9,7 +9,7 @@ async function main() {
     let bank = await $deploy('Bank')
     let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens)
 
-    await cLendbridge.$mintCollateral(HUSD, 80000000);
+    await cLendbridge.$mintCollateral(HUSD, 1000000000);
     // await cLendbridge.$redeemCollateral(C_HUSD, 100000000);
 
 
