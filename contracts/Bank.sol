@@ -26,46 +26,52 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     event Liquidate(uint256 indexed id, address indexed killer, uint256 prize, uint256 left);
 
     struct TokenBank {
-        address tokenAddr;
-        address nTokenAddr;
-        bool isOpen;
-        bool canDeposit;
-        bool canWithdraw;
-        uint256 totalVal;
-        uint256 totalDebt;
-        uint256 totalDebtShare;
-        uint256 totalReserve;
-        uint256 lastInterestTime;
+        address tokenAddr;   //支持存借的币种地址
+        address nTokenAddr;  //对应的凭证币种地址
+        bool isOpen;         //是否开启
+        bool canDeposit;     //是否支持存入
+        bool canWithdraw;    //是否支持借出
+        uint256 totalVal;    //总数量
+        uint256 totalDebt;   //总借出
+        uint256 totalDebtShare;  //总的借出份额,用以计算利息
+        uint256 totalReserve;    //累计利润
+        uint256 lastInterestTime;  //上次计息时间
     }
 
     struct Production {
-        address borrowToken;
-        bool isOpen;
-        bool canBorrow;
-        address goblin;
-        uint256 minDebt;
-        uint256 openFactor;
-        uint256 liquidateFactor;
-        uint group;
-        bool liqVerifyOracle;
+        address borrowToken;   //支持的可借币种
+        bool isOpen;           //是否开启
+        bool canBorrow;        //是否可借
+        address goblin;        //挖矿功能的具体实现合约
+        uint256 minDebt;       //最小可借的债务
+        uint256 openFactor;    //开仓的最大倍数
+        uint256 liquidateFactor;  //清算系数
+        uint group;             //分组,用以页面展现
+        bool liqVerifyOracle;   //是否启用外部预言机进行校验清算
     }
 
     struct Position {
-        address owner;
-        uint256 productionId;
-        uint256 debtShare;
+        address owner;       //仓位持有人的地址
+        uint256 productionId;   //仓位对应的产品编号
+        uint256 debtShare;     //债务份额,可以换算出实际欠款
     }
 
+    //参数配置
     IBankConfig public config;
+    //借款桥
     ILendbridge public lendbridge;
+    //挖矿奖励池
     IStakingRewards public lendRewardChef;
 
+    //保存支持的存借币种
     mapping(address => TokenBank) public banks;
     address[] public bankTokens;
 
+    //保存支持的挖矿交易对及对应配置
     mapping(uint256 => Production) public productions;
     uint256 public currentPid = 1;
 
+    //保存用户持仓信息
     mapping(uint256 => Position) public positions;
     uint256 public currentPos = 1;
 
@@ -133,7 +139,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         return debtVal.mul(bank.totalDebtShare).div(bank.totalDebt);
     }
 
-    /// write
+    /// 存入bank，同时生成对应的nToken作为凭证
     function deposit(address token, uint256 amount) external payable override enterLock('daw') onlyLendbridge {
         TokenBank storage bank = banks[token];
         require(bank.isOpen && bank.canDeposit, 'Token not exist or cannot deposit');
@@ -154,6 +160,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         NToken(bank.nTokenAddr).mint(msg.sender, pAmount);
     }
 
+    //还款，输入nToken数量，返还存款
     function withdraw(address token, uint256 pAmount) external override enterLock('daw') onlyLendbridge {
         TokenBank storage bank = banks[token];
         require(bank.isOpen && bank.canWithdraw, 'Token not exist or cannot withdraw');
@@ -167,16 +174,23 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         opTransfer(token, msg.sender, amount);
     }
 
+    
+    /// @dev Work on the given position. Must be called by the EOA.
+    /// @param posId The position ID to work on,if equal to zero means new position.
+    /// @param pid The production ID to work on
+    /// @param borrow The amount user borrow form bank.
+    /// @param data The encoded data, consisting of strategy address and bytes to strategy.
     function opPosition(uint256 posId, uint256 pid, uint256 borrow, bytes calldata data)
     external payable onlyEOA nonReentrant {
         _opPosition(posId, pid, borrow, data);
     }
 
+    //复投，先领取收益再对指定仓位进行加仓
     function reInvest(uint256 claimPosId, address toToken, uint256 posId, uint256 pid, uint256 borrow, bytes calldata data)external payable onlyEOA nonReentrant  {
         Position storage pos = positions[claimPosId];
         require(msg.sender == pos.owner, "not position owner");
         Production storage production = productions[pos.productionId];
-
+        //兑换成指定仓位需要的币种
         Goblin(production.goblin).claimAndSwap(toToken, pos.owner, pos.owner);
         _opPosition(posId, pid, borrow, data);
     }
@@ -246,13 +260,18 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         emit OpPosition(posId, debt, backToken);
     }
 
+<<<<<<< HEAD
     function borrowLendbridge(uint borrow, Production memory production) internal {
+=======
+    //从借款桥发起借款
+    function borroyLendbridge(uint borrow, Production memory production) internal {
+>>>>>>> add bank comments
         uint balance = SafeToken.myBalance(production.borrowToken);
         if (borrow > balance) {
             lendbridge.loanAndDeposit(production.borrowToken, borrow - balance);
         }
     }
-
+    //从借款桥发起还款
     function repayLendbridge(Production memory production) internal {
         if (address(lendbridge) == address(0)) {
             return;
@@ -271,6 +290,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         }
     }
 
+    //清算
     function liquidate(uint256 posId) external payable onlyEOA nonReentrant {
         Position storage pos = positions[posId];
         require(pos.debtShare > 0, "no debt");
@@ -310,7 +330,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         repayLendbridge(production);
         emit Liquidate(posId, msg.sender, prize, left);
     }
-
+    //领取指定仓位的收益
     function claim(uint256 posId) external onlyEOA nonReentrant {
         Position storage pos = positions[posId];
         require(msg.sender == pos.owner, "not position owner");
@@ -318,7 +338,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
         Goblin(production.goblin).claim(pos.owner, pos.owner);
     }
-
+    //领取所有
     function claimWithGoblins(address[] memory goblins, bool claimLendReward) external onlyEOA nonReentrant {
         for(uint i = 0; i< goblins.length; i++) {
             Goblin(goblins[i]).claim(msg.sender, msg.sender);
@@ -327,7 +347,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             claimLendbridge();
         }
     }
-
+    //领取所有
     function claimAll(bool claimLendReward) external onlyEOA nonReentrant {
         uint[] memory ps = userPositions[msg.sender];
         for(uint i = 0; i< ps.length; i++) {
@@ -371,6 +391,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         }
     }
 
+    //刷新借款补贴
     function updateLendChef(Position storage pos, Production storage production) internal {
         if (address(lendbridge) != address(0)) {
             if (lendbridge.claimable()) {
@@ -397,6 +418,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         lendRewardChef = _lendRewardChef;
     }
 
+    //添加bank中支持的币种
     function addToken(address token, string calldata _symbol) external onlyOwner {
         TokenBank storage bank = banks[token];
         require(!bank.isOpen, 'token already exists');
@@ -424,6 +446,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         bank.canWithdraw = canWithdraw;
     }
 
+    //添加产品
     function opProduction(uint256 pid, bool isOpen, bool canBorrow, address borrowToken, address goblin,
         uint256 minDebt, uint256 openFactor, uint256 liquidateFactor, uint group, bool liqVerifyOracle) external onlyOwner {
 
@@ -448,6 +471,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         production.liqVerifyOracle = liqVerifyOracle;
     }
 
+    //刷新收益
     function calInterest(address token) public {
         TokenBank storage bank = banks[token];
         require(bank.isOpen, 'token not exists');
