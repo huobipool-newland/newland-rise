@@ -260,12 +260,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         emit OpPosition(posId, debt, backToken);
     }
 
-<<<<<<< HEAD
     function borrowLendbridge(uint borrow, Production memory production) internal {
-=======
-    //从借款桥发起借款
-    function borroyLendbridge(uint borrow, Production memory production) internal {
->>>>>>> add bank comments
         uint balance = SafeToken.myBalance(production.borrowToken);
         if (borrow > balance) {
             lendbridge.loanAndDeposit(production.borrowToken, borrow - balance);
