@@ -200,7 +200,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         require(production.isOpen, 'Production not exists');
 
         require(borrow == 0 || production.canBorrow, "Production can not borrow");
-        borroyLendbridge(borrow, production);
+        borrowLendbridge(borrow, production);
         calInterest(production.borrowToken);
 
         uint256 debt = _removeDebt(positions[posId], production).add(borrow);
@@ -246,7 +246,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         emit OpPosition(posId, debt, backToken);
     }
 
-    function borroyLendbridge(uint borrow, Production memory production) internal {
+    function borrowLendbridge(uint borrow, Production memory production) internal {
         uint balance = SafeToken.myBalance(production.borrowToken);
         if (borrow > balance) {
             lendbridge.loanAndDeposit(production.borrowToken, borrow - balance);

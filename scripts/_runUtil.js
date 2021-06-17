@@ -60,39 +60,33 @@ async function deploy(name, ...args) {
 }
 
 async function getAddress(name, chainId) {
-    if (chainId !== 0 && !chainId) {
-        chainId = (await ethers.provider.getNetwork()).chainId
-    }
-    if (!fs.existsSync(dataPath)) {
-        return null
-    }
-    let data = JSON.parse(String(fs.readFileSync(dataPath)))
-
-    let dataKey = [chainId, config.$configKey].join('-')
-    if (!data[dataKey]) {
-        data[dataKey] = {}
-    }
-    let chainData = data[dataKey]
-
-    for (let key of Object.keys(chainData).reverse()) {
-        if (key.startsWith(`${name}/`)) {
-            return chainData[key]
-        }
-    }
+    return (await getContract(name, chainId)).address
 }
 
 async function getContract(name, chainId) {
-    let getContractFactoryName = name
-    let flPath = artifactPath + '/contracts/' + name + '_fl.sol'
-    if (fs.existsSync(flPath) && fs.readdirSync(flPath).length > 0) {
-        getContractFactoryName = 'contracts/' + name + '_fl.sol:' + name
-    }
-    const Contract = await ethers.getContractFactory(getContractFactoryName);
+    let result = await $eachContract(async (c, n, a) => {
+        if (n === name) {
+            return c
+        }
+    }, chainId)
+    return result[0];
+}
 
-    let contract = Contract.attach(await getAddress(name, chainId));
-    loggerObj(name, contract);
-    contract.$connect = signer => loggerObj(name, contract.connect(signer));
-    return contract;
+async function selectContracts(name, opt = {}, chainId) {
+    let result = await $eachContract(async (c, n, a) => {
+        if (n === name) {
+            let valid = true
+            for (let index of Object.keys(opt)) {
+                if (String(opt[index]).toLowerCase() !== String(a[index]).toLowerCase()) {
+                    valid = false
+                }
+            }
+            if (valid) {
+                return c
+            }
+        }
+    }, chainId)
+    return result;
 }
 
 async function getDeployInitData(address, chainId) {
@@ -186,6 +180,45 @@ async function evmGoSec(seconds) {
     return await ethers.provider.send("evm_increaseTime", [seconds])
 }
 
+async function eachContract(fn, chainId) {
+    if (chainId !== 0 && !chainId) {
+        chainId = (await ethers.provider.getNetwork()).chainId
+    }
+    if (!fs.existsSync(dataPath)) {
+        return null
+    }
+    let data = JSON.parse(String(fs.readFileSync(dataPath)))
+
+    let dataKey = [chainId, config.$configKey].join('-')
+    if (!data[dataKey]) {
+        data[dataKey] = {}
+    }
+    let chainData = data[dataKey]
+
+    let result = []
+    for (let key of Object.keys(chainData)) {
+        let strs = key.split('/')
+        let name = strs[0]
+        let args = strs[1].split(',')
+
+        let getContractFactoryName = name
+        let flPath = artifactPath + '/contracts/' + name + '_fl.sol'
+        if (fs.existsSync(flPath) && fs.readdirSync(flPath).length > 0) {
+            getContractFactoryName = 'contracts/' + name + '_fl.sol:' + name
+        }
+        const Contract = await ethers.getContractFactory(getContractFactoryName);
+
+        let contract = Contract.attach(chainData[key]);
+        loggerObj(name, contract);
+        contract.$connect = signer => loggerObj(name, contract.connect(signer));
+
+        let val = await fn(contract, name, args)
+        if (val) {
+            result.push(val)
+        }
+    }
+    return result
+}
 
 
 global.$deploy = deploy
@@ -199,4 +232,6 @@ global.$encodeParams = encodeParams
 global.$decodeParams = decodeParams
 global.$evmGoSec = evmGoSec
 global.$config = config
+global.$eachContract = eachContract
+global.$selectContracts = selectContracts
 
