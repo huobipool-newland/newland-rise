@@ -347,6 +347,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         uint[] memory ps = userPositions[msg.sender];
         for(uint i = 0; i< ps.length; i++) {
             address goblin = productions[positions[ps[i]].productionId].goblin;
+            calInterest(productions[positions[ps[i]].productionId].borrowToken);
             Goblin(goblin).claim(msg.sender, msg.sender);
         }
         if (claimLendReward) {
