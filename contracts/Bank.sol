@@ -14,7 +14,7 @@ import "./interface/IBank.sol";
 import "./interface/IStakingRewards.sol";
 
 interface ILendRewardChef {
-    function updateAmount(uint256 _pid, uint256 _amount, address _user) external;
+    function updateAmount(uint256 _pid, uint256 deltaBefore, uint256 deltaAfter, address _user) external;
     function addReward(uint amount) external;
 }
 
@@ -218,6 +218,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         calInterest(production.borrowToken);
 
         uint256 debt = _removeDebt(positions[posId], production).add(borrow);
+        uint debtBefore = debt;
         bool isBorrowHt = production.borrowToken == address(0);
 
         uint256 sendHT = msg.value;
@@ -255,7 +256,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
             _addDebt(positions[posId], production, debt);
         }
-        updateLendChef(positions[posId], production);
+        updateLendChef(positions[posId], production, debtBefore, debt);
         repayLendbridge(production);
         emit OpPosition(posId, debt, backToken);
     }
@@ -271,17 +272,14 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         if (address(lendbridge) == address(0)) {
             return;
         }
-        bool isBorrowHt = production.borrowToken == address(0);
-        if (!isBorrowHt) {
-            TokenBank storage borrowBank = banks[production.borrowToken];
-            uint256 total = totalToken(production.borrowToken);
-            uint256 nTotal = NToken(borrowBank.nTokenAddr).totalSupply();
-            uint borrowBankAmt = SafeToken.myBalance(production.borrowToken);
-            if (borrowBankAmt > borrowBank.totalReserve) {
-                borrowBankAmt = borrowBankAmt - borrowBank.totalReserve;
-                uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
-                lendbridge.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
-            }
+        TokenBank storage borrowBank = banks[production.borrowToken];
+        uint256 total = totalToken(production.borrowToken);
+        uint256 nTotal = NToken(borrowBank.nTokenAddr).totalSupply();
+        uint borrowBankAmt = SafeToken.myBalance(production.borrowToken);
+        if (borrowBankAmt > borrowBank.totalReserve) {
+            borrowBankAmt = borrowBankAmt - borrowBank.totalReserve;
+            uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
+            lendbridge.withdrawAndRepay(production.borrowToken, borrowBank.nTokenAddr, nAmount);
         }
     }
 
@@ -322,6 +320,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         } else {
             banks[production.borrowToken].totalVal = banks[production.borrowToken].totalVal.sub(debt).add(rest);
         }
+        updateLendChef(positions[posId], production, debt, 0);
         repayLendbridge(production);
         emit Liquidate(posId, msg.sender, prize, left);
     }
@@ -332,6 +331,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         Production storage production = productions[pos.productionId];
 
         Goblin(production.goblin).claim(pos.owner, pos.owner);
+        calInterstAll();
     }
     //领取所有
     function claimWithGoblins(address[] memory goblins, bool claimLendReward) external onlyEOA nonReentrant {
@@ -341,18 +341,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         if (claimLendReward) {
             claimLendbridge();
         }
-    }
-    //领取所有
-    function claimAll(bool claimLendReward) external onlyEOA nonReentrant {
-        uint[] memory ps = userPositions[msg.sender];
-        for(uint i = 0; i< ps.length; i++) {
-            address goblin = productions[positions[ps[i]].productionId].goblin;
-            calInterest(productions[positions[ps[i]].productionId].borrowToken);
-            Goblin(goblin).claim(msg.sender, msg.sender);
-        }
-        if (claimLendReward) {
-            claimLendbridge();
-        }
+        calInterstAll();
     }
 
     function _addDebt(Position storage pos, Production storage production, uint256 debtVal) internal {
@@ -388,7 +377,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     //刷新借款补贴
-    function updateLendChef(Position storage pos, Production storage production) internal {
+    function updateLendChef(Position storage pos, Production storage production, uint debtBefore, uint debtAfter) internal {
         if (address(lendbridge) != address(0)) {
             if (lendbridge.claimable()) {
                 _claimLendbridge();
@@ -397,7 +386,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         if (address(lendRewardChef) != address(0)) {
             uint lendChefPid = lendRewardChef.getPid(production.borrowToken);
             if (lendChefPid < uint(-1)) {
-                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, banks[production.borrowToken].totalDebt, pos.owner);
+                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, debtBefore, debtAfter, pos.owner);
             }
         }
     }
@@ -484,6 +473,16 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             bank.totalReserve = bank.totalReserve.add(toReserve);
             bank.totalDebt = bank.totalDebt.add(interest);
             bank.lastInterestTime = now;
+        }
+    }
+
+    function calInterstAll() public {
+        for(uint i = 0; i<bankTokens.length;i++) {
+            address token = bankTokens[i];
+            TokenBank storage bank = banks[token];
+            if (bank.isOpen) {
+                calInterest(token);
+            }
         }
     }
 

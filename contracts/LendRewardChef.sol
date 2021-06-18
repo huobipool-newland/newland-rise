@@ -195,27 +195,12 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         pool.lastRewardBlock = block.number;
     }
 
-    function updateAmount(uint256 _pid, uint256 _amount, address _user) public onlyOps {
-        PoolInfo storage pool = poolInfo[_pid];
-        updatePool(_pid);
-
-        UserInfo storage user = userInfo[_pid][_user];
-        if (user.amount > 0) {
-            uint256 rewardPending =
-            user.amount.mul(pool.accRewardPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
-            safeRewardTransfer(_pid, pool, _user, rewardPending);
+    function updateAmount(uint256 _pid, uint256 deltaBefore, uint256 deltaAfter, address _user) public onlyOps {
+        if (deltaAfter > deltaBefore) {
+            deposit(_pid, deltaAfter - deltaBefore, _user);
+        } else if (deltaBefore > deltaAfter) {
+            withdraw(_pid, deltaAfter - deltaBefore, _user);
         }
-
-        if (_amount > user.amount) {
-            pool.stakeBalance = pool.stakeBalance.add(_amount.sub(user.amount));
-            user.amount = user.amount.add(_amount.sub(user.amount));
-        } else if (_amount < user.amount) {
-            pool.stakeBalance = pool.stakeBalance.sub(user.amount.sub(_amount));
-            user.amount = user.amount.sub(user.amount.sub(_amount));
-        }
-        user.rewardDebt = user.amount.mul(pool.accRewardPerShare).div(1e12);
     }
 
     // Deposit Stake tokens to MasterChef for HPT allocation.

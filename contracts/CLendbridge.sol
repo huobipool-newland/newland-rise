@@ -16,6 +16,8 @@ interface LendRewardLens {
 
 interface ClaimContract {
     function claimAll(address holder, address[] memory markets) external;
+    function enterMarkets(address[] memory cTokens) external returns (uint[] memory);
+    function checkMembership(address account, address cToken) external view returns (bool);
 }
 
 contract CLendbridge is ILendbridge, Ownable {
@@ -158,6 +160,13 @@ contract CLendbridge is ILendbridge, Ownable {
         erc20.safeApprove(address(cToken), mintAmount);
         uint error = cToken.mint(mintAmount);
         require(error == 0, string(abi.encodePacked('newland.mint failed ', StrUtil.uint2str(error))));
+
+
+        if (!ClaimContract(claimContract).checkMembership(address(this), address(cToken))) {
+            address[] memory enterTokens = new address[](1);
+            enterTokens[0] = address(cToken);
+            ClaimContract(claimContract).enterMarkets(enterTokens);
+        }
     }
 
     function redeemCollateral(address cToken, uint cAmt) external onlyOwner {
