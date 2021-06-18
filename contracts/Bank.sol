@@ -479,7 +479,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             uint256 ratePerSec = config.getInterestRate(token, totalDebt, totalBalance);
             uint256 interest = ratePerSec.mul(timePast).mul(totalDebt).div(1e18);
 
-            uint256 toReserve = interest.mul(config.getReserveBps()).div(10000);
+            uint256 toReserve = interest.mul(config.getDyReserveBps(ratePerSec)).div(10000);
             bank.totalReserve = bank.totalReserve.add(toReserve);
             bank.totalDebt = bank.totalDebt.add(interest);
             bank.lastInterestTime = now;
