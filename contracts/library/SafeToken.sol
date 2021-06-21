@@ -6,6 +6,23 @@ interface ERC20Interface {
 }
 
 library SafeToken {
+
+    function opTransfer(address token, address to, uint value) internal {
+        if (token == address(0)) {
+            safeTransferETH(to, value);
+        } else {
+            safeTransfer(token, to, value);
+        }
+    }
+
+    function opBalance(address token) internal view returns (uint256) {
+        if (token == address(0)) {
+            return address(this).balance;
+        } else {
+            return ERC20Interface(token).balanceOf(address(this));
+        }
+    }
+
     function myBalance(address token) internal view returns (uint256) {
         return ERC20Interface(token).balanceOf(address(this));
     }

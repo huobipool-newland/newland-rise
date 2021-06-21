@@ -10,11 +10,18 @@ contract Treasury is Ownable {
     mapping(address => mapping(address => uint)) public userTokenAmt;
     mapping(address => uint) public tokenTotalAmt;
 
-    function deposit(address user, address token, uint amt) public onlyOwner returns(uint) {
+    function deposit(address user, address token, uint amt) public payable onlyOwner returns(uint) {
+        if (token == address(0)) {
+            amt = msg.value;
+        }
         if (amt <= 0) {
             return amt;
         }
-        token.safeTransferFrom(msg.sender, address(this), amt);
+
+        if (token != address(0)) {
+            token.safeTransferFrom(msg.sender, address(this), amt);
+        }
+
         userTokenAmt[user][token] += amt;
         tokenTotalAmt[token] += amt;
         return amt;
@@ -28,12 +35,13 @@ contract Treasury is Ownable {
 
         userTokenAmt[user][token] -= amt;
         tokenTotalAmt[token] -= amt;
-        uint bal = token.myBalance();
+        uint bal = token.opBalance();
+
         if (amt > bal) {
             amt = bal;
         }
         if (amt > 0) {
-            token.safeTransfer(to, amt);
+            token.opTransfer(to, amt);
         }
         return amt;
     }

@@ -171,10 +171,9 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         bank.totalVal = bank.totalVal.sub(amount);
 
         NToken(bank.nTokenAddr).burn(msg.sender, pAmount);
-        opTransfer(token, msg.sender, amount);
+        token.opTransfer(msg.sender, amount);
     }
 
-    
     /// @dev Work on the given position. Must be called by the EOA.
     /// @param posId The position ID to work on,if equal to zero means new position.
     /// @param pid The production ID to work on
@@ -217,8 +216,9 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         borrowLendbridge(borrow, production);
         calInterest(production.borrowToken);
 
-        uint256 debt = _removeDebt(positions[posId], production).add(borrow);
-        uint debtBefore = debt;
+        uint debtBefore = _removeDebt(positions[posId], production);
+        uint256 debt = debtBefore.add(borrow);
+
         bool isBorrowHt = production.borrowToken == address(0);
 
         uint256 sendHT = msg.value;
@@ -498,15 +498,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             bank.totalVal = bank.totalVal.sub(value);
         }
 
-        opTransfer(token, to, value);
-    }
-
-    function opTransfer(address token, address to, uint value) internal {
-        if (token == address(0)) {
-            SafeToken.safeTransferETH(to, value);
-        } else {
-            SafeToken.safeTransfer(token, to, value);
-        }
+        token.opTransfer(to, value);
     }
 
     function claimLendbridge() public {

@@ -5,7 +5,7 @@ interface ICToken {
 
     function borrow(uint borrowAmount) external returns (uint);
 
-    function repayBorrow(uint repayAmount) external returns (uint);
+    function repayBorrow(uint repayAmount) external payable returns (uint);
 
     function borrowRatePerBlock() external view returns (uint);
 

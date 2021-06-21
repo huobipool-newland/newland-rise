@@ -62,14 +62,16 @@ contract CLendbridge is ILendbridge, Ownable {
     }
 
     function setCToken(address erc20, address _cToken) public onlyOwner {
-        require(erc20 != address(0) && _cToken != address(0), 'invalid address');
+        require(_cToken != address(0), 'invalid address');
         require(ICToken(_cToken).underlying() == erc20 && erc20s[erc20] == address(0) && cTokens[_cToken] == address(0), 'invalid cToken');
 
         cTokens[erc20] = _cToken;
         erc20s[_cToken] = erc20;
 
-        erc20.safeApprove(address(treasury), 0);
-        erc20.safeApprove(address(treasury), uint256(-1));
+        if (erc20 != address(0)) {
+            erc20.safeApprove(address(treasury), 0);
+            erc20.safeApprove(address(treasury), uint256(-1));
+        }
     }
 
     function loanAndDeposit(address erc20, uint amt) public override onlyBank {
@@ -79,16 +81,18 @@ contract CLendbridge is ILendbridge, Ownable {
         uint error = cToken.borrow(amt);
         require(error == 0, string(abi.encodePacked('newland.borrow failed ', StrUtil.uint2str(error))));
 
-        uint erc20Amt = erc20.myBalance();
+        uint erc20Amt = erc20.opBalance();
         require(erc20Amt >= amt, 'newland.borrow failed');
-        erc20.safeApprove(address(bank), 0);
-        erc20.safeApprove(address(bank), amt);
-        bank.deposit(erc20, amt);
 
-        erc20Amt = erc20.myBalance();
-        if (erc20Amt > 0) {
-            treasury.deposit(address(this), erc20, erc20Amt);
+        if (erc20 == address(0)) {
+            bank.deposit{value: amt}(erc20, amt);
+        } else {
+            erc20.safeApprove(address(bank), 0);
+            erc20.safeApprove(address(bank), amt);
+            bank.deposit(erc20, amt);
         }
+
+        collectBalance(erc20, address(this));
     }
 
     function withdrawAndRepay(address erc20, address nErc20, uint nAmt) public override onlyBank {
@@ -103,22 +107,25 @@ contract CLendbridge is ILendbridge, Ownable {
             }
 
             bank.withdraw(erc20, nAmt);
-            uint repayAmt = erc20.myBalance();
+            uint repayAmt = erc20.opBalance();
             uint debt = cToken.borrowBalanceStored(address(this));
             if (repayAmt > debt) {
                 repayAmt = debt;
             }
 
-            erc20.safeApprove(address(cToken), 0);
-            erc20.safeApprove(address(cToken), repayAmt);
-            uint error = cToken.repayBorrow(repayAmt);
+            uint error = 0;
+            if (erc20 == address(0)) {
+                error = cToken.repayBorrow{value: repayAmt}(repayAmt);
+            } else {
+                erc20.safeApprove(address(cToken), 0);
+                erc20.safeApprove(address(cToken), repayAmt);
+                error = cToken.repayBorrow(repayAmt);
+            }
+
             require(error == 0, string(abi.encodePacked('newland.repayBorrow failed ', StrUtil.uint2str(error))));
         }
 
-        uint erc20Amt = erc20.myBalance();
-        if (erc20Amt > 0) {
-            treasury.deposit(address(this), erc20, erc20Amt);
-        }
+        collectBalance(erc20, address(this));
     }
 
     function manualRepay(address erc20) public onlyOwner {
@@ -128,23 +135,25 @@ contract CLendbridge is ILendbridge, Ownable {
         ICToken cToken = ICToken(cTokens[erc20]);
         require(address(cToken) != address(0), 'cToken not support');
 
-        uint repayAmt = erc20.myBalance();
+        uint repayAmt = erc20.opBalance();
         uint debt = cToken.borrowBalanceStored(address(this));
         if (repayAmt > debt) {
             repayAmt = debt;
         }
 
         if (repayAmt > 0) {
-            erc20.safeApprove(address(cToken), 0);
-            erc20.safeApprove(address(cToken), repayAmt);
-            uint error = cToken.repayBorrow(repayAmt);
+            uint error = 0;
+            if (erc20 == address(0)) {
+                error = cToken.repayBorrow{value: repayAmt}(repayAmt);
+            } else {
+                erc20.safeApprove(address(cToken), 0);
+                erc20.safeApprove(address(cToken), repayAmt);
+                error = cToken.repayBorrow(repayAmt);
+            }
             require(error == 0, string(abi.encodePacked('manual newland.repayBorrow failed ', StrUtil.uint2str(error))));
         }
 
-        uint erc20Amt = erc20.myBalance();
-        if (erc20Amt > 0) {
-            erc20.safeTransfer(owner(), erc20Amt);
-        }
+        collectBalance(erc20, owner());
     }
 
     function mintCollateral(address erc20, uint mintAmount) external onlyOwner {
@@ -215,4 +224,18 @@ contract CLendbridge is ILendbridge, Ownable {
         }
         return lendRewardLens.pending(address(this), cTokens[debtToken], _rewardToken);
     }
+
+    function collectBalance(address erc20, address to) internal {
+        uint erc20Amt = erc20.opBalance();
+        if (erc20Amt > 0) {
+            if (erc20 == address(0)) {
+                treasury.deposit{value: erc20Amt}(address(this), erc20, erc20Amt);
+            } else {
+                treasury.deposit(to, erc20, erc20Amt);
+            }
+        }
+    }
+
+fallback() external {}
+receive() payable external {}
 }
