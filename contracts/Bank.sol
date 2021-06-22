@@ -195,17 +195,18 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     function _opPosition(uint256 posId, uint256 pid, uint256 borrow, bytes calldata data) internal {
+        bool isNewPos = false;
         if (posId == 0) {
             posId = currentPos;
             currentPos ++;
             positions[posId].owner = msg.sender;
             positions[posId].productionId = pid;
-
+            isNewPos = true;
             userPositions[msg.sender].push(posId);
         } else {
             require(posId < currentPos, "bad position id");
             require(positions[posId].owner == msg.sender, "not position owner");
-
+            isNewPos = false;
             pid = positions[posId].productionId;
         }
 
@@ -251,9 +252,12 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             backToken = 0;
 
             require(debt >= production.minDebt, "too small debt size");
-            uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
-            require(health.mul(production.openFactor) >= debt.mul(10000), "bad work factor");
-
+            
+            if(isNewPos){
+                uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
+                require(health.mul(production.openFactor) >= debt.mul(10000), "bad work factor");
+            }
+            
             _addDebt(positions[posId], production, debt);
         }
         updateLendChef(positions[posId], production, debtBefore, debt);
