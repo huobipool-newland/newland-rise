@@ -291,6 +291,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         require(pos.debtShare > 0, "no debt");
         Production storage production = productions[pos.productionId];
 
+        calInterest(production.borrowToken);
         uint256 debt = _removeDebt(pos, production);
 
         uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);

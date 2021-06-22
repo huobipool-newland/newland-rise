@@ -93,7 +93,8 @@ async function getDeployInitData(address, chainId) {
     if (chainId !== 0 && !chainId) {
         chainId = (await ethers.provider.getNetwork()).chainId
     }
-    let data = JSON.parse(String(fs.readFileSync(dataPath)))[chainId]
+    let dataKey = [chainId, config.$configKey].join('-')
+    let data = JSON.parse(String(fs.readFileSync(dataPath)))[dataKey]
     if (!data) {
         return null
     }
