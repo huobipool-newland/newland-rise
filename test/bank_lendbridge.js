@@ -66,7 +66,7 @@ describe("BANK_LENDBRIDGE", function() {
         console.log(await lendRewardChef.$pendingReward(0, impersonateAccount))
         console.log(await lendRewardChef.$pendingReward(1, impersonateAccount))
         const bank = await $getContract('Bank');
-        await bank.$connect(signer).$claimAll(true);
+        // await bank.$connect(signer).$claimAll(true);
         console.log(await lendRewardChef.$pendingReward(0, impersonateAccount))
         console.log(await lendRewardChef.$pendingReward(1, impersonateAccount))
     });

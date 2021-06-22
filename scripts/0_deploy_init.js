@@ -32,7 +32,7 @@ async function main() {
     // await cLendbridge.$mintCollateral(HUSD, 100000000);
     // await cLendbridge.$redeemCollateral(C_HUSD, 100000000);
 
-    let model = await $deploy('CLendInterestModel', cLendbridge.address, '100000000000000000')
+    let model = await $deploy('CLendInterestModel', cLendbridge.address)
 
     await $deploy('MdexStakingChef',
         '0xe499ef4616993730ced0f31fa2703b92b50bb536', //hpt
@@ -46,7 +46,7 @@ async function main() {
 
     let config = await $deploy('BankConfig')
     if (config.$isNew) {
-        await config.$setParams(2000, 800, model.address);
+        await config.$setParams(2000, 800, model.address, '100000000000000000');
     }
     if (bank.$isNew) {
         await bank.$updateLendRewardChef(lendChef.address);

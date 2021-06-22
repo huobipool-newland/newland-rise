@@ -252,9 +252,9 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             backToken = 0;
 
             require(debt >= production.minDebt, "too small debt size");
-            
-            if(isNewPos){
-                uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
+
+            uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
+            if(isNewPos || health == 0){
                 require(health.mul(production.openFactor) >= debt.mul(10000), "bad work factor");
             }
             
