@@ -1,11 +1,22 @@
 require("@nomiclabs/hardhat-waffle");
 // require('hardhat-contract-sizer');
 require("./scripts/_runUtil.js");
-let {importKey} = require('./scripts/_keyManager')
-let ownerAddress = '0x2484de6894b5f7ea8278b1883ed3e5a58c93a038';
-let $keys = [
-  importKey(ownerAddress)
-].filter(i => i)
+
+let $keys = []
+if (['run', 'compile'].indexOf(process.argv[2]) === -1) {
+  let {importKey} = require('./scripts/_keyManager')
+  let ownerAddress = '276bb442d11b0edb5191bb28b81b6374b187bcc2';
+  $keys = [
+    importKey(ownerAddress)
+  ].filter(i => i)
+}
+let hardhatAccounts
+if ($keys.length > 0) {
+  hardhatAccounts = [{
+    privateKey: $keys[0],
+    balance: '1000000000000000000000'
+  }]
+}
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
@@ -28,6 +39,7 @@ module.exports = {
       forking: {
         url: "http://172.18.7.1:8545"
       },
+      accounts: hardhatAccounts,
       blockGasLimit: 900000000000000,
       gasPrice: 1.3 * 1000000000,
       allowUnlimitedContractSize: true

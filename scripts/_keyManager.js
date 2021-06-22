@@ -25,7 +25,7 @@ function importKey(address) {
 
     let keyObject
     try {
-        keythereum.importFromFile(address);
+        keyObject = keythereum.importFromFile(address);
     } catch (e) {
         return ''
     }

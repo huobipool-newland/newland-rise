@@ -220,11 +220,9 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         uint debtBefore = _removeDebt(positions[posId], production);
         uint256 debt = debtBefore.add(borrow);
 
-        bool isBorrowHt = production.borrowToken == address(0);
-
         uint256 sendHT = msg.value;
         uint256 beforeToken = 0;
-        if (isBorrowHt) {
+        if (production.borrowToken == address(0)) {
             sendHT = sendHT.add(borrow);
             require(sendHT <= address(this).balance && debt <= banks[production.borrowToken].totalVal, "insufficient HT in the bank");
             beforeToken = address(this).balance.sub(sendHT);
@@ -238,14 +236,14 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
         Goblin(production.goblin).work{value: sendHT}(posId, msg.sender, production.borrowToken, borrow, debt, data);
 
-        uint256 backToken = isBorrowHt? (address(this).balance.sub(beforeToken)) :
+        uint256 backToken = production.borrowToken == address(0) ? (address(this).balance.sub(beforeToken)) :
         SafeToken.myBalance(production.borrowToken).sub(beforeToken);
 
         if(backToken > debt) { //没有借款, 有剩余退款
             backToken = backToken.sub(debt);
             debt = 0;
 
-            isBorrowHt? SafeToken.safeTransferETH(msg.sender, backToken):
+            production.borrowToken == address(0) ? SafeToken.safeTransferETH(msg.sender, backToken):
             SafeToken.safeTransfer(production.borrowToken, msg.sender, backToken);
         } else if (debt > backToken) { //有借款
             debt = debt.sub(backToken);
