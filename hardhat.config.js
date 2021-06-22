@@ -5,7 +5,7 @@ require("./scripts/_runUtil.js");
 let $keys = []
 if (['run', 'compile'].indexOf(process.argv[2]) === -1) {
   let {importKey} = require('./scripts/_keyManager')
-  let ownerAddress = '276bb442d11b0edb5191bb28b81b6374b187bcc2';
+  let ownerAddress = '0x276bb442d11b0edb5191bb28b81b6374b187bcc2';
   $keys = [
     importKey(ownerAddress)
   ].filter(i => i)
@@ -41,19 +41,19 @@ module.exports = {
       },
       accounts: hardhatAccounts,
       blockGasLimit: 900000000000000,
-      gasPrice: 1.3 * 1000000000,
+      gasPrice: 1.8 * 1000000000,
       allowUnlimitedContractSize: true
     },
     heco: {
       url: "https://http-mainnet-node.huobichain.com",
       accounts: $keys,
-      gasPrice: 1.3 * 1000000000,
+      gasPrice: 1.8 * 1000000000,
       allowUnlimitedContractSize: true
     },
     hecoTest: {
       url: "https://http-testnet.hecochain.com",
       accounts: $keys,
-      gasPrice: 1.3 * 1000000000,
+      gasPrice: 1.8 * 1000000000,
       allowUnlimitedContractSize: true
     }
   },
