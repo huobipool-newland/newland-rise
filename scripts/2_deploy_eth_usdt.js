@@ -50,8 +50,6 @@ async function main() {
         await goblin.$setSwapPath(ETH, [MDX, ETH]);
     }
 
-    await bank.$addToken(ETH, 'nETH');
-
     // todo min
     await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
 

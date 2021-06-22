@@ -3,7 +3,7 @@ require("@nomiclabs/hardhat-waffle");
 require("./scripts/_runUtil.js");
 
 let $keys = []
-if (['run', 'compile'].indexOf(process.argv[2]) === -1) {
+if (['run', 'compile', 'flatten'].indexOf(process.argv[2]) === -1) {
   let {importKey} = require('./scripts/_keyManager')
   let ownerAddress = '0x276bb442d11b0edb5191bb28b81b6374b187bcc2';
   $keys = [

@@ -8,7 +8,7 @@ let fns = {
 }
 fns[process.argv[2]]();
 
-function gen() {
+async function gen() {
     for (let name of fs.readdirSync(solHome)) {
         if (!name.endsWith('.sol')) {
             continue
@@ -18,11 +18,12 @@ function gen() {
         }
         let path = solHome +'/' + name
         let flPath = solHome +'/' + name.replace(/\.sol$/, '') + '_fl.sol'
-        e(`npx hardhat flatten ${path} > ${flPath}`).then(() => {
+        await e(`npx hardhat flatten ${path} > ${flPath}`).then(() => {
             wrapper(flPath)
             console.log(`${name} done`)
         });
     }
+    console.log('---done')
 }
 
 function clear() {
@@ -33,7 +34,6 @@ function clear() {
         }
     }
 }
-
 
 function wrapper(flPath) {
     let text = String(fs.readFileSync(flPath))
@@ -47,7 +47,7 @@ function wrapper(flPath) {
     fs.writeFileSync(flPath, text)
 }
 
-function e(cmd, mbNum){
+async function e(cmd, mbNum){
     return new Promise((resolve, reject) => {
         exec(`${cmd}`, {
                 maxBuffer: 1024 * 1024 * (mbNum || 3) //quick fix

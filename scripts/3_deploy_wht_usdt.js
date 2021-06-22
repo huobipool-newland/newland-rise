@@ -49,8 +49,6 @@ async function main() {
         await goblin.$setSwapPath(WHT, [MDX, WHT]);
     }
 
-    await bank.$addToken(WHT, 'nWHT');
-
     // todo min
     await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
 
