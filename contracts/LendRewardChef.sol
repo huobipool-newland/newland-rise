@@ -199,7 +199,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         if (deltaAfter > deltaBefore) {
             deposit(_pid, deltaAfter - deltaBefore, _user);
         } else if (deltaBefore > deltaAfter) {
-            withdraw(_pid, deltaAfter - deltaBefore, _user);
+            withdraw(_pid, deltaBefore - deltaAfter, _user);
         }
     }
 
@@ -227,7 +227,9 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     function withdraw(uint256 _pid, uint256 _amount, address _user) public override onlyOps {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        require(user.amount >= _amount, "withdraw: not good");
+        if (user.amount < _amount) {
+            return;
+        }
         updatePool(_pid);
 
         {

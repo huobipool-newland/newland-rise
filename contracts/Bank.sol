@@ -258,7 +258,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             
             _addDebt(positions[posId], production, debt);
         }
-        updateLendChef(positions[posId], production, debtBefore, debt);
+        updateLendChef(positions[posId], production, debtBefore);
         repayLendbridge(production);
         emit OpPosition(posId, debt, backToken);
     }
@@ -323,7 +323,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         } else {
             banks[production.borrowToken].totalVal = banks[production.borrowToken].totalVal.sub(debt).add(rest);
         }
-        updateLendChef(positions[posId], production, debt, 0);
+        updateLendChef(positions[posId], production, debt);
         repayLendbridge(production);
         emit Liquidate(posId, msg.sender, prize, left);
     }
@@ -380,7 +380,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     //刷新借款补贴
-    function updateLendChef(Position storage pos, Production storage production, uint debtBefore, uint debtAfter) internal {
+    function updateLendChef(Position storage pos, Production storage production, uint debtBefore) internal {
         if (address(lendbridge) != address(0)) {
             if (lendbridge.claimable()) {
                 _claimLendbridge();
@@ -389,7 +389,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         if (address(lendRewardChef) != address(0)) {
             uint lendChefPid = lendRewardChef.getPid(production.borrowToken);
             if (lendChefPid < uint(-1)) {
-                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, debtBefore, debtAfter, pos.owner);
+                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, debtBefore, debtShareToVal(production.borrowToken, pos.debtShare), pos.owner);
             }
         }
     }

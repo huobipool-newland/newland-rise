@@ -358,7 +358,9 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
     function withdraw(uint256 _pid, uint256 _amount, address _user) public override onlyOps {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        require(user.amount >= _amount, "withdraw: not good");
+        if (user.amount < _amount) {
+            return;
+        }
         updatePool(_pid);
 
         {

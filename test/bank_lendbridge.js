@@ -70,4 +70,13 @@ describe("BANK_LENDBRIDGE", function() {
         console.log(await lendRewardChef.$pendingReward(0, impersonateAccount))
         console.log(await lendRewardChef.$pendingReward(1, impersonateAccount))
     });
+    it('赎回', async () => {
+        const remove = await $getAddress('MdxStrategyWithdrawMinimizeTrading');
+        const bankAddress = await $getContract('Bank');
+
+        let cPosition = await bankAddress.$currentPos()
+        console.log("currentPosition: " + cPosition)
+        await bankAddress.$connect(signer).$opPosition(Number(cPosition) - 1,1,"0", $opRemoveData(remove, husd, usdt, 0));
+        console.log("currentPosition: " + (await bankAddress.$currentPos()))
+    });
 });

@@ -27,14 +27,18 @@ async function main() {
     // await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD]);
     // await cLendbridge.redeemCollateral(C_HUSD, '1069581543')
 
-    await cLendbridge.$setCToken(NVALUE, C_NVALUE)
+    // await cLendbridge.$setCToken(NVALUE, C_NVALUE)
     // await cLendbridge.$manualRepay(NVALUE);
 
     // await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD, C_ETH]);
 
     // await cLendbridge.$redeemCollateral(C_HUSD, 10000000);
 
-    await cLendbridge.$mintCollateral(NVALUE, '100000000000000000000000000');
+    // await cLendbridge.$mintCollateral(NVALUE, '100000000000000000000000000');
+    // await cLendbridge.$manualRepay(USDT);
+    // await cLendbridge.$redeemCollateral(C_NVALUE, '99999999999999999990000000');
+
+
     console.log('---done')
 }
 
