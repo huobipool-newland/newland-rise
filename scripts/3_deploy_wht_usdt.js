@@ -3,7 +3,8 @@ let {MDX_ROUTER,
     MDX,
     WHT,
 
-    WHT_USD
+    WHT_USD,
+    address0
 } = $config;
 
 async function main() {
@@ -51,6 +52,7 @@ async function main() {
 
     // todo min
     await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
+    await bank.$opProduction(0, true, true, address0, goblin.address, 1, 7000, 8500, 0, false);
 
     await lens.$setStrategyInfo(goblin.address, mdxAddStrategy.address, mdxWithdrawStrategy.address);
     console.log('---done')

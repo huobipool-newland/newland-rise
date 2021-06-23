@@ -24,7 +24,8 @@ module.exports = {
         ETH: '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd',
         NVALUE: '',
         C_NVALUE: '',
-        C_ETH: ''
+        C_ETH: '',
+        address0
     },
     dev: {
         $import: true,
@@ -49,6 +50,7 @@ module.exports = {
         ETH: '0x64ff637fb478863b7468bc97d30a5bf3a428a1fd',
         NVALUE: '0xBe285c9932dAD5c07e3F33a898337A99322Af3eE',
         C_NVALUE: '0x8982395797e619dB8926C358A9E823cF723a99AE',
-        C_ETH: '0x91d2398f412663E4d5433c589Eab9a36100AdADf'
+        C_ETH: '0x91d2398f412663E4d5433c589Eab9a36100AdADf',
+        address0
     }
 }
