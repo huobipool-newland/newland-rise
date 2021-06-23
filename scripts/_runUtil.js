@@ -73,7 +73,7 @@ async function getContract(name, chainId) {
 }
 
 async function selectContracts(name, opt = {}, chainId) {
-    let result = await $eachContract(async (c, n, a) => {
+    return await $eachContract(async (c, n, a) => {
         if (n === name) {
             let valid = true
             for (let index of Object.keys(opt)) {
@@ -85,8 +85,7 @@ async function selectContracts(name, opt = {}, chainId) {
                 return c
             }
         }
-    }, chainId)
-    return result;
+    }, chainId);
 }
 
 async function getDeployInitData(address, chainId) {
