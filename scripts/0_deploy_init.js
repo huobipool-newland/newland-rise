@@ -9,7 +9,9 @@ let {WHT,
     lendCliam,
     lendLens,
 
-    HPT_USD
+    HPT_USD,
+    NVALUE,
+    C_NVALUE
 
 } = $config;
 async function main() {
@@ -23,14 +25,13 @@ async function main() {
     let bank = await $deploy('Bank')
     let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens)
 
+    await cLendbridge.$setCToken(NVALUE, C_NVALUE)
+
     let lendChef = await $deploy('LendRewardChef',
         DEP, //dep
         0,//startBlock，
         cLendbridge.address
     )
-
-    // await cLendbridge.$mintCollateral(HUSD, 100000000);
-    // await cLendbridge.$redeemCollateral(C_HUSD, 100000000);
 
     let model = await $deploy('CLendInterestModel', cLendbridge.address)
 

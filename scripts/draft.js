@@ -1,6 +1,11 @@
 (async () => {
     let bank = await $getContract('Bank')
     let lendBridge = await $getContract('CLendbridge')
+
+    await bank.$calInterest($config.USDT)
+    await bank.$calInterest($config.HUSD)
+    await bank.$calInterest($config.ETH)
+
     let bankUsdt = await bank.$banks($config.USDT)
     for (let key of Object.keys(bankUsdt)) {
         console.log(key, String(bankUsdt[key]))
@@ -13,8 +18,7 @@
     for (let key of Object.keys(bankEth)) {
         console.log(key, String(bankEth[key]))
     }
-    // await bank.$calInterest($config.USDT)
-    // await bank.$calInterest($config.HUSD)
+
     // await bank.$liquidate(35)
 
     // await bank.$withdrawReserve($config.USDT, lendBridge.address, '2844012491453417250')

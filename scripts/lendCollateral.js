@@ -2,17 +2,39 @@ let {WHT,
     HPT,
     DEP,
     HUSD,
-
+    ETH,
+    USDT,
+    C_HUSD,
+    NVALUE,
+    C_NVALUE,
     lendCliam,
-    lendLens} = $config;
-async function main() {
-    let bank = await $deploy('Bank')
-    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens)
+    lendLens,
+    C_ETH,
+    C_USDT
 
-    await cLendbridge.$mintCollateral(HUSD, 1000000000);
+} = $config;
+async function main() {
+    let bank = await $getContract('Bank')
+    let cLendbridge = await $getContract('CLendbridge')
+
+    // await cLendbridge.$mintCollateral(HUSD, 1000000000);
     // await cLendbridge.$redeemCollateral(C_HUSD, 100000000);
 
+    // await cLendbridge.$manualRepay(USDT);
+    // await cLendbridge.$manualRepay(HUSD);
+    // await cLendbridge.$manualRepay(ETH);
 
+    // await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD]);
+    // await cLendbridge.redeemCollateral(C_HUSD, '1069581543')
+
+    await cLendbridge.$setCToken(NVALUE, C_NVALUE)
+    // await cLendbridge.$manualRepay(NVALUE);
+
+    // await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD, C_ETH]);
+
+    // await cLendbridge.$redeemCollateral(C_HUSD, 10000000);
+
+    await cLendbridge.$mintCollateral(NVALUE, '100000000000000000000000000');
     console.log('---done')
 }
 
