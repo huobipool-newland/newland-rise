@@ -65,6 +65,7 @@ contract Lens {
     Bank public bankContract;
     PriceOracle public  priceOracle;
     uint public constant blocksPerYear = 10512000;
+    address public wht = 0x5545153CCFcA01fbd7Dd11C0b23ba694D9509A6F;
 
     struct BankTokenMetadata {
         address tokenAddr;
@@ -193,6 +194,9 @@ contract Lens {
         (uint256 prodId, uint256 healthAmount, uint256 debtAmount,address owner) = bankContract.positionInfo(posId);
 
         (address borrowToken,,,address goblin,,,,,) = bankContract.productions(prodId);
+        if(borrowToken == address(0)){
+            borrowToken = wht;
+        }
         uint256 lpAmount = GoblinLensInterface(goblin).posLPAmount(posId);
         
         (uint256 lpValue,uint256 token0Amount,uint256 token1Amount) = getUserLpInfo(goblin, lpAmount);
@@ -316,6 +320,10 @@ contract Lens {
         uint256 liquidateFactor,
         uint256 group,
         ) = bankContract.productions(pid);
+
+        if(borrowToken == address(0)){
+            borrowToken = wht;
+        }
 
         (
         address lpToken,
