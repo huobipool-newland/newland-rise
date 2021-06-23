@@ -26,7 +26,7 @@ describe("lens", function() {
     });
     it('清算池列表', async () => {
         const lensContract = await $deploy('Lens');
-
+        //
         console.log(await lensContract.$getAllUserPos())
     });
     it("test1", async function() {
@@ -47,10 +47,10 @@ describe("lens", function() {
     
 
 
-        // const infoAll =  await lensContract.$infoAll();
-        // console.log(infoAll[0][0].tokenAddr.toString());
-        // console.log(infoAll[0][0].totalVal.toString());
-        // console.log(infoAll[1].toString());
+        const infoAll =  await lensContract.$infoAll();
+        console.log(infoAll[0][0].tokenAddr.toString());
+        console.log(infoAll[0][0].totalVal.toString());
+        console.log(infoAll[1].toString());
 
         // //opPosition
         // const addStra = await $getAddress('MdxStrategyAddTwoSidesOptimal');
@@ -69,8 +69,8 @@ describe("lens", function() {
 
         //console.log(await bank.$getUserPositions('0x831f6b2a293af9d5c8a6649dd42cc2f6efc2fe96'))
         //check lens
-        const posAll = await lensContract.$getAllUserPos();
-        console.log(posAll.toString());
+        // const posAll = await lensContract.$getAllUserPos();
+        // console.log(posAll.toString());
         // const userAll =  await lensContract.$userAll(impersonateAccount);
         // console.log(userAll[0].toString());
     });

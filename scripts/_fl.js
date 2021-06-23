@@ -9,6 +9,7 @@ let fns = {
 fns[process.argv[2]]();
 
 async function gen() {
+    let aItems = []
     for (let name of fs.readdirSync(solHome)) {
         if (!name.endsWith('.sol')) {
             continue
@@ -18,11 +19,12 @@ async function gen() {
         }
         let path = solHome +'/' + name
         let flPath = solHome +'/' + name.replace(/\.sol$/, '') + '_fl.sol'
-        await e(`npx hardhat flatten ${path} > ${flPath}`).then(() => {
+        aItems.push(e(`npx hardhat flatten ${path} > ${flPath}`).then(() => {
             wrapper(flPath)
             console.log(`${name} done`)
-        });
+        }))
     }
+    await Promise.all(aItems)
     console.log('---done')
 }
 

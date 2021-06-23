@@ -1,5 +1,11 @@
 (async ()=> {
-    let lens = await $getContract('Lens')
+    let bank = await $getContract('Bank')
+    let priceOracle = await $getContract("PriceOracle")
+
+    let lens = await $deploy('Lens');
+    if (lens.$isNew) {
+        await lens.$setParams(bank.address, priceOracle.address)
+    }
 
     let goblins = await $selectContracts('MdxGoblin')
     let withdraw = await $getContract('MdxStrategyWithdrawMinimizeTrading')

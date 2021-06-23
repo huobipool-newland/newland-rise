@@ -23,7 +23,7 @@ async function main() {
     }
 
     let bank = await $deploy('Bank')
-    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens)
+    let cLendbridge = await $deploy('CLendbridge', bank.address, DEP, lendCliam, HPT, lendLens, WHT)
 
     await cLendbridge.$setCToken(NVALUE, C_NVALUE)
 
@@ -47,7 +47,7 @@ async function main() {
 
     let config = await $deploy('BankConfig')
     if (config.$isNew) {
-        await config.$setParams(2000, 800, model.address, '100000000000000000');
+        await config.$setParams(5000, 200, model.address, '50000000000000000');
     }
     if (bank.$isNew) {
         await bank.$updateLendRewardChef(lendChef.address);

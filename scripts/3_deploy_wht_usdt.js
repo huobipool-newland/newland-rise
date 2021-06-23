@@ -2,9 +2,11 @@ let {MDX_ROUTER,
     USDT,
     MDX,
     WHT,
-
+    C_USDT,
+    C_HUSD,
     WHT_USD,
-    address0
+    address0,
+    C_HT
 } = $config;
 
 async function main() {
@@ -12,6 +14,8 @@ async function main() {
     let bank = await $getContract('Bank')
     let chef = await $getContract('MdexStakingChef')
     let lens = await $getContract('Lens');
+    let cLendbridge = await $getContract('CLendbridge')
+    let lendChef = await $getContract('LendRewardChef')
 
     await priceOracle.$setPriceFeed(WHT, WHT_USD);
 
@@ -53,6 +57,11 @@ async function main() {
     // todo min
     await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
     await bank.$opProduction(0, true, true, address0, goblin.address, 1, 7000, 8500, 0, false);
+
+    await bank.$addToken(address0, 'nHT');
+    await cLendbridge.$setCToken(address0, C_HT)
+    await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD, C_HT]);
+    await lendChef.$add(10, address0);
 
     await lens.$setStrategyInfo(goblin.address, mdxAddStrategy.address, mdxWithdrawStrategy.address);
     console.log('---done')

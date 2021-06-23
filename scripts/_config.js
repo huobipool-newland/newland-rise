@@ -25,7 +25,8 @@ module.exports = {
         NVALUE: '',
         C_NVALUE: '',
         C_ETH: '',
-        address0
+        address0,
+        C_HT: ''
     },
     dev: {
         $import: true,
@@ -51,6 +52,7 @@ module.exports = {
         NVALUE: '0xBe285c9932dAD5c07e3F33a898337A99322Af3eE',
         C_NVALUE: '0x8982395797e619dB8926C358A9E823cF723a99AE',
         C_ETH: '0x91d2398f412663E4d5433c589Eab9a36100AdADf',
-        address0
+        address0,
+        C_HT: '0xE4dF556Ab7BE80bd01237c031B32EaA29974805C'
     }
 }

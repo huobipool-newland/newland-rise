@@ -17,7 +17,7 @@ async function main() {
     let bank = await $getContract('Bank')
     let cLendbridge = await $getContract('CLendbridge')
 
-    // await cLendbridge.$mintCollateral(HUSD, 1000000000);
+    // await cLendbridge.$mintCollateral(USDT, '500000000000000000');
     // await cLendbridge.$redeemCollateral(C_HUSD, 100000000);
 
     // await cLendbridge.$manualRepay(USDT);
@@ -36,7 +36,7 @@ async function main() {
 
     // await cLendbridge.$mintCollateral(NVALUE, '100000000000000000000000000');
     // await cLendbridge.$manualRepay(USDT);
-    // await cLendbridge.$redeemCollateral(C_NVALUE, '99999999999999999990000000');
+    await cLendbridge.$mintCollateral(NVALUE, '99999998000000000000000000');
 
 
     console.log('---done')

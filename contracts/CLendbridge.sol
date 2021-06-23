@@ -20,6 +20,10 @@ interface ClaimContract {
     function checkMembership(address account, address cToken) external view returns (bool);
 }
 
+interface ICEther {
+    function repayBorrow(uint repayAmount) external payable;
+}
+
 contract CLendbridge is ILendbridge, Ownable {
     using SafeToken for address;
     using SafeMath for uint256;
@@ -28,6 +32,7 @@ contract CLendbridge is ILendbridge, Ownable {
     address public rewardToken;
     address public claimContract;
     address public HPT;
+    address public WHT;
 
     mapping(address => address) public  cTokens;
     mapping(address => address) public erc20s;
@@ -43,11 +48,12 @@ contract CLendbridge is ILendbridge, Ownable {
 
     constructor(IBank _bank, address _rewardToken,
         address _claimContract, address _hpt,
-        LendRewardLens _lendRewardLens) public {
+        LendRewardLens _lendRewardLens, address _wht) public {
         bank = _bank;
         rewardToken = _rewardToken;
         claimContract = _claimContract;
         HPT = _hpt;
+        WHT = _wht;
 
         lendRewardLens = _lendRewardLens;
         treasury= new Treasury();
@@ -63,7 +69,12 @@ contract CLendbridge is ILendbridge, Ownable {
 
     function setCToken(address erc20, address _cToken) public onlyOwner {
         require(_cToken != address(0), 'invalid address');
-        require(ICToken(_cToken).underlying() == erc20 && erc20s[erc20] == address(0) && cTokens[_cToken] == address(0), 'invalid cToken');
+        if (erc20 == address(0)) {
+            require(ICToken(_cToken).underlying() == WHT, 'invalid cToken');
+        } else {
+            require(ICToken(_cToken).underlying() == erc20, 'invalid cToken');
+        }
+        require(erc20s[erc20] == address(0) && cTokens[_cToken] == address(0), 'invalid cToken');
 
         cTokens[erc20] = _cToken;
         erc20s[_cToken] = erc20;
@@ -115,7 +126,7 @@ contract CLendbridge is ILendbridge, Ownable {
 
             uint error = 0;
             if (erc20 == address(0)) {
-                error = cToken.repayBorrow{value: repayAmt}(repayAmt);
+                ICEther(address(cToken)).repayBorrow{value: repayAmt}(repayAmt);
             } else {
                 erc20.safeApprove(address(cToken), 0);
                 erc20.safeApprove(address(cToken), repayAmt);
@@ -138,13 +149,13 @@ contract CLendbridge is ILendbridge, Ownable {
         uint repayAmt = erc20.opBalance();
         uint debt = cToken.borrowBalanceStored(address(this));
         if (repayAmt > debt) {
-            repayAmt = debt;
+            repayAmt = uint(-1);
         }
 
         if (repayAmt > 0) {
             uint error = 0;
             if (erc20 == address(0)) {
-                error = cToken.repayBorrow{value: repayAmt}(repayAmt);
+                cToken.repayBorrow{value: repayAmt}(repayAmt);
             } else {
                 erc20.safeApprove(address(cToken), 0);
                 erc20.safeApprove(address(cToken), repayAmt);

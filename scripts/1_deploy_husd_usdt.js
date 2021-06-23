@@ -25,9 +25,11 @@ async function main() {
 
     await cLendbridge.$setCToken(USDT, C_USDT);
     await cLendbridge.$setCToken(HUSD, C_HUSD);
-    await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD]);
 
     await lendChef.$add(10, HUSD);
+
+    await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD]);
+
     await lendChef.$add(10, USDT);
 
     // ------ 10 0xdff86B408284dff30A7CAD7688fEdB465734501C 193

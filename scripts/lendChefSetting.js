@@ -10,13 +10,15 @@ let {MDX_ROUTER,
     USDT_USD,
 
     C_USDT,
+    address0,
     C_HUSD} = $config;
 
 async function main() {
     let lendChef = await $getContract('LendRewardChef')
 
     // await lendChef.$add(10, HUSD);
-    await lendChef.$add(10, USDT);
+    // await lendChef.$add(10, USDT);
+    await lendChef.$add(10, address0);
 
     console.log('---done')
 }

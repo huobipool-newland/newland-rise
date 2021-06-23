@@ -194,9 +194,6 @@ contract Lens {
         (uint256 prodId, uint256 healthAmount, uint256 debtAmount,address owner) = bankContract.positionInfo(posId);
 
         (address borrowToken,,,address goblin,,,,,) = bankContract.productions(prodId);
-        if(borrowToken == address(0)){
-            borrowToken = wht;
-        }
         uint256 lpAmount = GoblinLensInterface(goblin).posLPAmount(posId);
         
         (uint256 lpValue,uint256 token0Amount,uint256 token1Amount) = getUserLpInfo(goblin, lpAmount);
@@ -207,9 +204,9 @@ contract Lens {
         return PositionInfo({
             posId : posId,
             prodId : prodId,
-            borrowToken: borrowToken,
+            borrowToken: borrowToken == address(0) ? wht:borrowToken,
             debtAmount : debtAmount,
-            debtValue : debtAmount.mul(getPriceInUsd(borrowToken)).div(10 ** uint(ERC20(borrowToken).decimals())),
+            debtValue : debtAmount.mul(getPriceInUsd(borrowToken)).div(10 ** uint(ERC20(borrowToken == address(0) ? wht:borrowToken).decimals())),
             healthAmount : healthAmount,
             lpAmount : lpAmount,
             lpValue : lpValue,
@@ -254,9 +251,9 @@ contract Lens {
         }
 
         return DepositInfo({
-            tokenAddr : tokenAddr,
+            tokenAddr : address(0) == tokenAddr ? wht:tokenAddr,
             nTokenAddr : nTokenAddr,
-            symbol : ERC20(bankToken).symbol(),
+            symbol : bankToken == address(0) ? 'HT': ERC20(bankToken).symbol(),
             amount : nAmount,
             value : value,
             reward : uint(0)
@@ -277,7 +274,7 @@ contract Lens {
         ,,
         ) = bankContract.banks(bankToken);
 
-        string memory symbol = ERC20(bankToken).symbol();
+        string memory symbol = bankToken == address(0) ? "HT" : ERC20(bankToken).symbol();
         //console.log(symbol);
         uint256 interestRate = bankContract.config().getInterestRate(bankToken, totalDebt, totalVal);
         //console.log(interestRate);
@@ -291,7 +288,7 @@ contract Lens {
 
         return BankTokenMetadata({
 
-            tokenAddr : tokenAddr,
+            tokenAddr : address(0) == tokenAddr ? wht:tokenAddr,
             nTokenAddr : nTokenAddr,
             isOpen : isOpen,
             canDeposit : canDeposit,
@@ -455,7 +452,8 @@ contract Lens {
     }
 
     function getPriceInUsd(address token) public view returns (uint){
-        (int price,) = priceOracle.getPrice(token);
+        token == address(0) ? wht:token;
+        (int price,) = priceOracle.getPrice(token == address(0) ? wht:token);
         if (price > 0) {
             return uint(price);
         } else {

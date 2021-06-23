@@ -264,7 +264,10 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     function borrowLendbridge(uint borrow, Production memory production) internal {
-        uint balance = SafeToken.myBalance(production.borrowToken);
+        uint balance = production.borrowToken.opBalance();
+        if (production.borrowToken == address(0)) {
+            balance = balance - msg.value;
+        }
         if (borrow > balance) {
             lendbridge.loanAndDeposit(production.borrowToken, borrow - balance);
         }
@@ -277,7 +280,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         TokenBank storage borrowBank = banks[production.borrowToken];
         uint256 total = totalToken(production.borrowToken);
         uint256 nTotal = NToken(borrowBank.nTokenAddr).totalSupply();
-        uint borrowBankAmt = SafeToken.myBalance(production.borrowToken);
+        uint borrowBankAmt = production.borrowToken.opBalance();
         if (borrowBankAmt > borrowBank.totalReserve) {
             borrowBankAmt = borrowBankAmt - borrowBank.totalReserve;
             uint nAmount = (total == 0 || nTotal == 0) ? borrowBankAmt: borrowBankAmt.mul(nTotal).div(total);
@@ -327,15 +330,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         repayLendbridge(production);
         emit Liquidate(posId, msg.sender, prize, left);
     }
-    //领取指定仓位的收益
-    function claim(uint256 posId) external onlyEOA nonReentrant {
-        Position storage pos = positions[posId];
-        require(msg.sender == pos.owner, "not position owner");
-        Production storage production = productions[pos.productionId];
 
-        Goblin(production.goblin).claim(pos.owner, pos.owner);
-        calInterstAll();
-    }
     //领取所有
     function claimWithGoblins(address[] memory goblins, bool claimLendReward) external onlyEOA nonReentrant {
         for(uint i = 0; i< goblins.length; i++) {
