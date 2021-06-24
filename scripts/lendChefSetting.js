@@ -18,8 +18,9 @@ async function main() {
 
     // await lendChef.$add(10, HUSD);
     // await lendChef.$add(10, USDT);
-    await lendChef.$add(10, address0);
+    // await lendChef.$add(10, address0);
 
+    await lendChef.$add(10, address0);
     console.log('---done')
 }
 

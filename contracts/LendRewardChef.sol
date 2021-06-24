@@ -234,8 +234,10 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     function withdraw(uint256 _pid, uint256 _amount, address _user) public override onlyOps {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-
-        require(user.goblin != address(0) && msg.sender == user.goblin, 'only goblin');
+        if (user.goblin == address(0)) {
+            return;
+        }
+        require(msg.sender == user.goblin, 'only goblin');
 
         if (user.amount < _amount) {
             _amount = user.amount;
