@@ -10,7 +10,8 @@ let {WHT,
     lendCliam,
     lendLens,
     C_ETH,
-    C_USDT
+    C_USDT,
+    address0
 
 } = $config;
 async function main() {
@@ -25,20 +26,16 @@ async function main() {
     // await cLendbridge.$manualRepay(ETH);
 
     // await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD]);
-    // await cLendbridge.redeemCollateral(C_HUSD, '1069581543')
 
     // await cLendbridge.$setCToken(NVALUE, C_NVALUE)
     // await cLendbridge.$manualRepay(NVALUE);
 
-    // await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD, C_ETH]);
-
-    // await cLendbridge.$redeemCollateral(C_HUSD, 10000000);
+    // await cLendbridge.$manualRepay(NVALUE);
 
     // await cLendbridge.$mintCollateral(NVALUE, '100000000000000000000000000');
-    // await cLendbridge.$manualRepay(USDT);
-    await cLendbridge.$mintCollateral(NVALUE, '99999998000000000000000000');
+    // await cLendbridge.$redeemCollateral(C_NVALUE, '1000000000000000000000');
 
-
+    await cLendbridge.$manualRepay(USDT);
     console.log('---done')
 }
 

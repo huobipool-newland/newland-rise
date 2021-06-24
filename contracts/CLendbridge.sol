@@ -155,7 +155,7 @@ contract CLendbridge is ILendbridge, Ownable {
         if (repayAmt > 0) {
             uint error = 0;
             if (erc20 == address(0)) {
-                cToken.repayBorrow{value: repayAmt}(repayAmt);
+                ICEther(address(cToken)).repayBorrow{value: repayAmt}(repayAmt);
             } else {
                 erc20.safeApprove(address(cToken), 0);
                 erc20.safeApprove(address(cToken), repayAmt);
