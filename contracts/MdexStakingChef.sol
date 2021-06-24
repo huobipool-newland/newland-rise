@@ -30,6 +30,7 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         uint256 mdxRewardDebt;
         uint256 hptRewarded;  //accumlated total
         uint256 mdxRewarded;  //accumlated total
+        address goblin;
     }
     // Info of each pool.
     struct PoolInfo {
@@ -324,6 +325,11 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         updatePool(_pid);
 
         UserInfo storage user = userInfo[_pid][_user];
+        if (user.goblin != address(0)) {
+            require(msg.sender == user.goblin, 'only goblin');
+        } else {
+            user.goblin = msg.sender;
+        }
         if (user.amount > 0) {
             // reward hpt
             uint256 hptPending =
@@ -358,6 +364,9 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
     function withdraw(uint256 _pid, uint256 _amount, address _user) public override onlyOps {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
+
+        require(user.goblin != address(0) && user.goblin == msg.sender, 'only goblin');
+
         if (user.amount < _amount) {
             _amount = user.amount;
         }
