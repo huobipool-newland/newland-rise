@@ -55,8 +55,8 @@ async function main() {
     }
 
     // todo min
-    await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
-    await bank.$opProduction(0, true, true, address0, goblin.address, 1, 7000, 8500, 0, false);
+    await bank.$opProduction(0, true, true, USDT, goblin.address, '10000000000000000', 7000, 8500, 0, false);
+    await bank.$opProduction(0, true, true, address0, goblin.address, '10000000000000000', 7000, 8500, 0, false);
 
     await bank.$addToken(address0, 'nHT');
     await cLendbridge.$setCToken(address0, C_HT)

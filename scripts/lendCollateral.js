@@ -32,8 +32,8 @@ async function main() {
 
     // await cLendbridge.$manualRepay(NVALUE);
 
-    // await cLendbridge.$mintCollateral(NVALUE, '1000000000000000000000');
-    await cLendbridge.$redeemCollateral(C_NVALUE, '99998000000000000000000000');
+    await cLendbridge.$mintCollateral(NVALUE, '1000000000000000000000');
+    // await cLendbridge.$redeemCollateral(C_NVALUE, '99998000000000000000000000');
 
     // await cLendbridge.$manualRepay(USDT);
     console.log('---done')

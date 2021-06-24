@@ -70,9 +70,9 @@ async function main() {
     await bank.$addToken(USDT, 'nUSDT');
     await bank.$addToken(HUSD, 'nHUSD');
     // todo min
-    await bank.$opProduction(0, true, true, USDT, goblin.address, 1, 7000, 8500, 0, false);
+    await bank.$opProduction(0, true, true, USDT, goblin.address, '10000000000000000', 7000, 8500, 0, false);
     // todo min
-    await bank.$opProduction(0, true, true, HUSD, goblin.address, 1, 7000, 8500, 0, false);
+    await bank.$opProduction(0, true, true, HUSD, goblin.address, '1000000', 7000, 8500, 0, false);
 
     await lens.$setStrategyInfo(goblin.address, mdxAddStrategy.address, mdxWithdrawStrategy.address);
     console.log('---done')
