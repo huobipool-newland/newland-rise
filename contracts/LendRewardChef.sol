@@ -22,6 +22,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         uint256 amount; // How many Stake tokens the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
         uint256 rewarded;
+        address goblin;
     }
     // Info of each pool.
     struct PoolInfo {
@@ -209,6 +210,12 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         updatePool(_pid);
 
         UserInfo storage user = userInfo[_pid][_user];
+        if (user.goblin != address(0)) {
+            require(msg.sender == user.goblin, 'only goblin');
+        } else {
+            user.goblin = msg.sender;
+        }
+
         if (user.amount > 0) {
             uint256 rewardPending =
             user.amount.mul(pool.accRewardPerShare).div(1e12).sub(
@@ -227,6 +234,9 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     function withdraw(uint256 _pid, uint256 _amount, address _user) public override onlyOps {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
+
+        require(user.goblin != address(0) && msg.sender == user.goblin, 'only goblin');
+
         if (user.amount < _amount) {
             _amount = user.amount;
         }

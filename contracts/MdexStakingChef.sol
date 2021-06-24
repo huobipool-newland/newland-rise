@@ -365,7 +365,7 @@ contract MdexStakingChef is AccessSetting, IStakingRewards {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
 
-        require(user.goblin != address(0) && user.goblin == msg.sender, 'only goblin');
+        require(user.goblin != address(0) && msg.sender == user.goblin, 'only goblin');
 
         if (user.amount < _amount) {
             _amount = user.amount;
