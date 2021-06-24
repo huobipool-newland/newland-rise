@@ -123,7 +123,7 @@ async function getDeployInitData(address, chainId) {
             methodTypes[i] = 'address'
         }
     }
-    return web3.eth.abi.encodeParameters(methodTypes, argsArray)
+    return web3.eth.abi.encodeParameters(methodTypes, argsArray).replace(/^0x/, '')
 }
 
 function isBaseType(type) {

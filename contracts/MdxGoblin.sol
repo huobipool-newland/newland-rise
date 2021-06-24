@@ -215,12 +215,31 @@ contract MdxGoblin is Ownable, ReentrancyGuard, Goblin, MdxExcessReward {
         }
     }
 
-    function claimAndSwap(address toToken, address user, address to)
+    //复投，先领取收益再对指定仓位进行加仓
+    function reInvestData(address owner, address toToken, address _token0, address _token1, address addStrategy)
     external
     override
     onlyOperator
     nonReentrant
+    returns(bytes memory)
     {
+        //兑换成指定仓位需要的币种
+        uint beforeAmt = toToken.balanceOf(owner);
+        claimAndSwap(toToken, owner, owner);
+        uint afterAmt = toToken.balanceOf(owner);
+        require(afterAmt > beforeAmt, 'nothing to invest');
+
+        uint amount = afterAmt - beforeAmt;
+        bytes memory ext;
+        if (toToken == _token0) {
+            ext = abi.encode(_token0, _token1, amount, 0, 0);
+        } else {
+            ext = abi.encode(_token0, _token1, 0, amount, 0);
+        }
+        return abi.encode(addStrategy, ext);
+    }
+
+    function claimAndSwap(address toToken, address user, address to) internal {
         if (staking.getRewardToken() != toToken) {
             uint swapAmt = staking.claim(stakingPid, staking.getRewardToken(), user, address(this));
 

@@ -185,16 +185,15 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     //复投，先领取收益再对指定仓位进行加仓
-    function reInvest(uint256 claimPosId, address toToken, uint256 posId, uint256 pid, uint256 borrow, bytes calldata data)external payable onlyEOA nonReentrant  {
+    function reInvest(uint256 claimPosId, address toToken, uint256 posId, uint256 pid, address token0, address token1, address addStrategy)external payable onlyEOA nonReentrant  {
         Position storage pos = positions[claimPosId];
         require(msg.sender == pos.owner, "not position owner");
         Production storage production = productions[pos.productionId];
-        //兑换成指定仓位需要的币种
-        Goblin(production.goblin).claimAndSwap(toToken, pos.owner, pos.owner);
-        _opPosition(posId, pid, borrow, data);
+        bytes memory data = Goblin(production.goblin).reInvestData(pos.owner, toToken, token0, token1, addStrategy);
+        _opPosition(posId, pid, 0, data);
     }
 
-    function _opPosition(uint256 posId, uint256 pid, uint256 borrow, bytes calldata data) internal {
+    function _opPosition(uint256 posId, uint256 pid, uint256 borrow, bytes memory data) internal {
         bool isNewPos = false;
         if (posId == 0) {
             posId = currentPos;
@@ -217,8 +216,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         borrowLendbridge(borrow, production);
         calInterest(production.borrowToken);
 
-        uint debtBefore = _removeDebt(positions[posId], production);
-        uint256 debt = debtBefore.add(borrow);
+        uint dsBefore = positions[posId].debtShare;
+        uint256 debt = _removeDebt(positions[posId], production).add(borrow);
 
         uint256 sendHT = msg.value;
         uint256 beforeToken = 0;
@@ -258,7 +257,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
             
             _addDebt(positions[posId], production, debt);
         }
-        updateLendChef(positions[posId], production, debtBefore);
+        updateLendChef(positions[posId], production, dsBefore);
         repayLendbridge(production);
         emit OpPosition(posId, debt, backToken);
     }
@@ -295,6 +294,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         Production storage production = productions[pos.productionId];
 
         calInterest(production.borrowToken);
+        uint dsBefore = pos.debtShare;
         uint256 debt = _removeDebt(pos, production);
 
         uint256 health = Goblin(production.goblin).health(posId, production.borrowToken);
@@ -326,7 +326,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         } else {
             banks[production.borrowToken].totalVal = banks[production.borrowToken].totalVal.sub(debt).add(rest);
         }
-        updateLendChef(positions[posId], production, debt);
+        updateLendChef(positions[posId], production, dsBefore);
         repayLendbridge(production);
         emit Liquidate(posId, msg.sender, prize, left);
     }
@@ -375,7 +375,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
     }
 
     //刷新借款补贴
-    function updateLendChef(Position storage pos, Production storage production, uint debtBefore) internal {
+    function updateLendChef(Position storage pos, Production storage production, uint dsBefore) internal {
         if (address(lendbridge) != address(0)) {
             if (lendbridge.claimable()) {
                 _claimLendbridge();
@@ -384,7 +384,7 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
         if (address(lendRewardChef) != address(0)) {
             uint lendChefPid = lendRewardChef.getPid(production.borrowToken);
             if (lendChefPid < uint(-1)) {
-                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, debtBefore, debtShareToVal(production.borrowToken, pos.debtShare), pos.owner);
+                ILendRewardChef(address(lendRewardChef)).updateAmount(lendChefPid, dsBefore, pos.debtShare, pos.owner);
             }
         }
     }

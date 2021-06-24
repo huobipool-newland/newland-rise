@@ -228,7 +228,7 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         if (user.amount < _amount) {
-            return;
+            _amount = user.amount;
         }
         updatePool(_pid);
 
