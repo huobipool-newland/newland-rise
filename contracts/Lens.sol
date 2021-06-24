@@ -17,7 +17,7 @@ interface ChefLensInterface {
 
     function mdxRewardPerBlock(uint256 _pid) external view returns (uint256);
 
-    function hptPerBlock() external view returns (uint256);
+    function hptRewardPerBlock(uint256 _pid) external view returns (uint256);
 
     function blocksPerYear() external view returns (uint256);
 
@@ -357,7 +357,7 @@ contract Lens {
         address chef = GoblinLensInterface(goblin).staking();
 
         ChefLensInterface chefLens = ChefLensInterface(chef);
-        uint256 hptPerBlock = chefLens.hptPerBlock();
+        uint256 hptPerBlock = chefLens.hptRewardPerBlock(GoblinLensInterface(goblin).stakingPid());
         uint256 mdxPerBlock = chefLens.mdxRewardPerBlock(GoblinLensInterface(goblin).stakingPid());
         (address lpToken,,,,,uint256 poolLpBalance) = chefLens.poolInfo(GoblinLensInterface(goblin).stakingPid());
 
