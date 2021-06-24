@@ -181,7 +181,6 @@ contract CLendbridge is ILendbridge, Ownable {
         uint error = cToken.mint(mintAmount);
         require(error == 0, string(abi.encodePacked('newland.mint failed ', StrUtil.uint2str(error))));
 
-
         if (!ClaimContract(claimContract).checkMembership(address(this), address(cToken))) {
             address[] memory enterTokens = new address[](1);
             enterTokens[0] = address(cToken);
