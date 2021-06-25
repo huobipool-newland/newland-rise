@@ -20,7 +20,7 @@ async function main() {
     // await lendChef.$add(10, USDT);
     // await lendChef.$add(10, address0);
 
-    await lendChef.$add(10, address0);
+    await lendChef.$add(USDT);
     console.log('---done')
 }
 

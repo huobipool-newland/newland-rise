@@ -220,6 +220,14 @@ async function eachContract(fn, chainId) {
     return result
 }
 
+async function sleep(milliseconds) {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve()
+        }, milliseconds)
+    })
+}
+
 
 global.$deploy = deploy
 global.$getAddress = getAddress
@@ -234,4 +242,5 @@ global.$evmGoSec = evmGoSec
 global.$config = config
 global.$eachContract = eachContract
 global.$selectContracts = selectContracts
+global.$sleep = sleep
 

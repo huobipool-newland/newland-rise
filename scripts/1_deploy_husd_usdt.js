@@ -27,7 +27,7 @@ async function main() {
     await cLendbridge.$setCToken(HUSD, C_HUSD);
 
     await lendChef.$add(HUSD);
-
+    await $sleep(1000);
     await lendChef.$add(USDT);
 
     // ------ 10 0xdff86B408284dff30A7CAD7688fEdB465734501C 193
