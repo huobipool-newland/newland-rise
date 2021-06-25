@@ -221,7 +221,12 @@ contract Lens {
 
     function getUserDepReward(address owner, address borrowToken) public view returns (uint){
         LendChefInterface lendChef = LendChefInterface(address(bankContract.lendRewardChef()));
-        return lendChef.pendingReward(lendChef.getPid(borrowToken), owner);
+        uint pid = lendChef.getPid(borrowToken);
+        if (pid < uint(-1)) {
+            return lendChef.pendingReward(pid, owner);
+        } else {
+            return 0;
+        }
     }
 
     function userDeposits(address userAddr, address bankToken) public view returns (DepositInfo memory){

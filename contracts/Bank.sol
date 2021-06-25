@@ -15,7 +15,8 @@ import "./interface/IStakingRewards.sol";
 
 interface ILendRewardChef {
     function updateAmount(uint256 _pid, uint256 deltaBefore, uint256 deltaAfter, address _user) external;
-    function addReward(uint amount) external;
+    function addReward(address debtToken, uint amount) external;
+    function poolInfo(uint256 _pid) external view returns (address, uint256, uint256, uint256, address);
 }
 
 contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
@@ -376,10 +377,8 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
     //刷新借款补贴
     function updateLendChef(Position storage pos, Production storage production, uint dsBefore) internal {
-        if (address(lendbridge) != address(0)) {
-            if (lendbridge.claimable()) {
-                _claimLendbridge();
-            }
+        if (address(lendbridge) != address(0) && lendbridge.claimable()) {
+            _claimLendbridge(production.borrowToken);
         }
         if (address(lendRewardChef) != address(0)) {
             uint lendChefPid = lendRewardChef.getPid(production.borrowToken);
@@ -501,18 +500,22 @@ contract Bank is NTokenFactory, Ownable, ReentrancyGuard, IBank {
 
     function claimLendbridge() public {
         if (address(lendbridge) != address(0) && lendbridge.claimable()) {
-            _claimLendbridge();
             for(uint i = 0; i<lendRewardChef.poolLength(); i++) {
+                (address token,,,,) = ILendRewardChef(address(lendRewardChef)).poolInfo(i);
+                _claimLendbridge(token);
                 lendRewardChef.claimAll(i, msg.sender, msg.sender);
             }
         }
     }
 
-    function _claimLendbridge() internal returns(address, uint){
-        (address token, uint claimAmt) = lendbridge.claim();
+    function _claimLendbridge(address debtToken) internal returns(address, uint){
+        (address token, uint claimAmt) = lendbridge.claim(debtToken);
+        if (claimAmt <= 0) {
+            return (token, 0);
+        }
         token.safeApprove(address(lendRewardChef), 0);
         token.safeApprove(address(lendRewardChef), claimAmt);
-        ILendRewardChef(address(lendRewardChef)).addReward(claimAmt);
+        ILendRewardChef(address(lendRewardChef)).addReward(debtToken, claimAmt);
         return (token, claimAmt);
     }
 

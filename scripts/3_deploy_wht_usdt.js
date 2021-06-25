@@ -60,8 +60,6 @@ async function main() {
 
     await bank.$addToken(address0, 'nHT');
     await cLendbridge.$setCToken(address0, C_HT)
-    await cLendbridge.$setClaimCTokens([C_USDT, C_HUSD, C_HT]);
-    await lendChef.$add(10, address0);
 
     await lens.$setStrategyInfo(goblin.address, mdxAddStrategy.address, mdxWithdrawStrategy.address);
     console.log('---done')

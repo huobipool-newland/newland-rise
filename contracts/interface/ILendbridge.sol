@@ -11,7 +11,7 @@ interface ILendbridge {
 
     function claimable() external view returns(bool);
 
-    function claim() external returns(address, uint);
+    function claim(address debtToken) external returns(address, uint);
 
     function debtRewardPending(address debtToken, address _rewardToken) external view returns(uint);
 }

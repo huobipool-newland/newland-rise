@@ -27,7 +27,6 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     // Info of each pool.
     struct PoolInfo {
         IERC20 stake; // Address of Stake token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool. HPTs to distribute per block.
         uint256 lastRewardBlock; // Last block number that HPTs distribution occurs.
         uint256 accRewardPerShare; // Accumulated HPTs per share, times 1e12. See below.
         uint256 stakeBalance;
@@ -39,7 +38,6 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     IERC20 public rewardToken;
     PoolInfo[] public poolInfo;
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    uint256 public totalAllocPoint = 0;
     uint256 public startBlock;
     uint256 public rewardBalance;
     uint256 public rewardTotal;
@@ -65,13 +63,9 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
         rewardToken.approve(address(rewardTreasury), uint256(-1));
     }
 
-    function addReward(uint amount) public onlyOps {
+    function addReward(address token, uint amount) public onlyOps {
         rewardToken.safeTransferFrom(msg.sender, address(this), amount);
-        for(uint i = 0; i< poolInfo.length; i++) {
-            rewardTreasury.deposit(address(poolInfo[i].stake),
-                address(rewardToken),
-                amount.mul(poolInfo[i].allocPoint).div(totalAllocPoint));
-        }
+        rewardTreasury.deposit(token, address(rewardToken), amount);
     }
 
     function getRewardToken() view external override returns(address) {
@@ -96,21 +90,18 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
     // Add a new stake to the pool. Can only be called by the owner.
     // XXX DO NOT add the same Stake token more than once. Rewards will be messed up if you do.
     function add(
-        uint256 _allocPoint,
         IERC20 _stake
     ) public onlyOwner {
         require(poolLenMap[address(_stake)] == 0, 'stake pool already exist');
         massUpdatePools();
         uint256 lastRewardBlock =
         block.number > startBlock ? block.number : startBlock;
-        totalAllocPoint = totalAllocPoint.add(_allocPoint);
         Treasury treasury= new Treasury();
         rewardToken.approve(address(treasury), uint256(-1));
 
         poolInfo.push(
             PoolInfo({
             stake: _stake,
-            allocPoint: _allocPoint,
             lastRewardBlock: lastRewardBlock,
             accRewardPerShare: 0,
             stakeBalance: 0,
@@ -118,19 +109,6 @@ contract LendRewardChef is AccessSetting,IStakingRewards {
             })
         );
         poolLenMap[address(_stake)] = poolInfo.length;
-    }
-
-    // Update the given pool's HPT allocation point. Can only be called by the owner.
-    function set(
-        uint256 _pid,
-        uint256 _allocPoint
-    ) public onlyOwner {
-        require(address(poolInfo[_pid].stake) != address(0), 'pid not exist');
-        massUpdatePools();
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
-            _allocPoint
-        );
-        poolInfo[_pid].allocPoint = _allocPoint;
     }
 
     function userTotalReward(uint pid, address user) public view returns(uint) {

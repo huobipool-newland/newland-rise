@@ -36,7 +36,6 @@ contract CLendbridge is ILendbridge, Ownable {
 
     mapping(address => address) public  cTokens;
     mapping(address => address) public erc20s;
-    address[] public claimCTokens;
 
     LendRewardLens public lendRewardLens;
     Treasury public treasury;
@@ -57,14 +56,6 @@ contract CLendbridge is ILendbridge, Ownable {
 
         lendRewardLens = _lendRewardLens;
         treasury= new Treasury();
-    }
-
-    function setClaimCTokens(address[] memory _claimCTokens) public onlyOwner {
-        claimCTokens = _claimCTokens;
-    }
-
-    function getClaimCTokens() public view returns(address[] memory) {
-        return claimCTokens;
     }
 
     function setCToken(address erc20, address _cToken) public onlyOwner {
@@ -217,7 +208,13 @@ contract CLendbridge is ILendbridge, Ownable {
     }
 
     // claim dep
-    function claim() public override onlyBank returns(address, uint) {
+    function claim(address debtToken) public override onlyBank returns(address, uint) {
+        address cToken = cTokens[debtToken];
+        if (cToken == address(0)) {
+            return (rewardToken, 0);
+        }
+        address[] memory claimCTokens = new address[](1);
+        claimCTokens[0] = cToken;
         ClaimContract(claimContract).claimAll(address(this), claimCTokens);
         uint rewardAmt = rewardToken.myBalance();
         rewardToken.safeTransfer(address(bank), rewardAmt);
