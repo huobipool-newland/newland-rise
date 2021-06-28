@@ -58,6 +58,11 @@ contract CLendbridge is ILendbridge, Ownable {
         treasury= new Treasury();
     }
 
+    function setParams(address _rewardToken, address _claimContract) public onlyOwner {
+        rewardToken = _rewardToken;
+        claimContract = _claimContract;
+    }
+
     function setCToken(address erc20, address _cToken) public onlyOwner {
         require(_cToken != address(0), 'invalid address');
         if (erc20 == address(0)) {
